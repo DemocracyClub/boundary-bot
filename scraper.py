@@ -80,4 +80,5 @@ def scrape_bce_completed():
         result = scraperwiki.sql.execute(
             "DELETE FROM 'bce_completed' WHERE url NOT IN " + placeholders, urls)
 
+
 scrape_bce_completed()
