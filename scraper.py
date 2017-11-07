@@ -63,10 +63,8 @@ def scrape_bce_completed():
                         print(record)
                         if SLACK_WEBHOOK_URL and SEND_NOTIFICATIONS:
                             post_slack_message(record)
-                            pass
                         if GITHUB_API_KEY and SEND_NOTIFICATIONS:
                             raise_github_issue(record)
-                            pass
                 except OperationalError:
                     # The first time we run the scraper it will throw
                     # because the table doesn't exist yet
