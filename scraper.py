@@ -9,7 +9,7 @@ os.environ['SCRAPERWIKI_DATABASE_NAME'] = 'sqlite:///data.sqlite'
 import scraperwiki
 
 
-SEND_NOTIFICATIONS = False
+SEND_NOTIFICATIONS = True
 
 try:
     SLACK_WEBHOOK_URL = os.environ['MORPH_BOUNDARY_BOT_SLACK_WEBHOOK_URL']
