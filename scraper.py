@@ -22,63 +22,114 @@ except KeyError:
     GITHUB_API_KEY = None
 
 
-def post_slack_message(record):
-    message = "Completed boundary review for %s: %s" % (record['name'], record['url'])
+def post_slack_message(message):
     slack = SlackClient(SLACK_WEBHOOK_URL)
     slack.post_message(message)
 
 
-def raise_github_issue(record):
+def raise_github_issue(title, body):
     owner = 'DemocracyClub'
     repo = 'EveryElection'
-    title = 'Completed boundary review for %s' % (record['name'])
-    body = "Completed boundary review for %s: %s" % (record['name'], record['url'])
     github = GitHubClient(GITHUB_API_KEY)
     github.raise_issue(owner, repo, title, body)
 
 
-def scrape_bce_completed():
-    # Boundary Commission for England
+class LgbceScraper:
 
-    urls = [] # URLs we've seen this scraper run
+    BASE_URL = "http://www.lgbce.org.uk/current-reviews"
+    CURRENT_LABEL = 'Current Reviews'
+    COMPLETED_LABEL = 'Recently Completed'
 
-    html = scraperwiki.scrape("http://www.lgbce.org.uk/current-reviews")
-    root = lxml.html.fromstring(html)
+    def __init__(self):
+        scraperwiki.sql.execute("""
+            CREATE TABLE IF NOT EXISTS lgbce_reviews (
+                slug TEXT PRIMARY KEY,
+                name TEXT,
+                url TEXT,
+                status TEXT,
+                latest_status TEXT
+            );""")
+        self.data = {}
+        self.slack_messages = []
+        self.github_issues = []
 
-    h2_tags = root.cssselect('h2')
-    for h2 in h2_tags:
-        text = str(h2.text)
-        if text == 'Recently Completed':
-            # iterate over completed boundary reviews:
-            for ul in h2.getnext().iterchildren():
-                record = {}
-                record['name'] = ul.findall('a')[0].text
-                record['url'] = ul.findall('a')[0].get('href')
-                urls.append(record['url'])
+    def scrape_index(self):
+        html = scraperwiki.scrape(self.BASE_URL)
+        root = lxml.html.fromstring(html)
 
-                try:
-                    exists = scraperwiki.sql.select(
-                        "* FROM 'bce_completed' WHERE url=?", record['url'])
-                    if len(exists) == 0:
-                        print(record)
-                        if SLACK_WEBHOOK_URL and SEND_NOTIFICATIONS:
-                            post_slack_message(record)
-                        if GITHUB_API_KEY and SEND_NOTIFICATIONS:
-                            raise_github_issue(record)
-                except OperationalError:
-                    # The first time we run the scraper it will throw
-                    # because the table doesn't exist yet
-                    pass
+        h2_tags = root.cssselect('h2')
+        for h2 in h2_tags:
+            text = str(h2.text)
+            if text in [self.CURRENT_LABEL, self.COMPLETED_LABEL]:
+                # iterate over boundary reviews:
+                for ul in h2.getnext().iterchildren():
+                    link = ul.findall('a')[0]
+                    url = link.get('href')
+                    slug = url.split('/')[-1]
+                    self.data[slug] = {
+                        'slug': slug,
+                        'name': link.text,
+                        'url': url,
+                        'status': text,
+                        'latest_event': None,
+                    }
 
-                scraperwiki.sqlite.save(
-                    unique_keys=['url'], data=record, table_name='bce_completed')
-                scraperwiki.sqlite.commit_transactions()
+    def make_notifications(self):
+        for key, record in self.data.items():
+            result = scraperwiki.sql.select(
+                "* FROM 'lgbce_reviews' WHERE slug=?", record['slug'])
 
-    # remove any stale records from the DB
-    if urls:
-        placeholders = '(' + ', '.join(['?' for url in urls]) + ')'
+            if len(result) == 0:
+                # we've not seen this boundary review before
+                self.slack_messages.append(
+                    "New boundary review found for %s: %s" % (record['name'], record['url']))
+
+            if len(result) == 1:
+                # we've already got our eye on this one
+                if result[0]['status'] == self.CURRENT_LABEL and record['status'] == self.COMPLETED_LABEL:
+                    self.slack_messages.append(
+                        "Completed boundary review for %s: %s" % (record['name'], record['url']))
+                    self.github_issues.append({
+                        'title': 'Completed boundary review for %s' % (record['name']),
+                        'body': "Completed boundary review for %s: %s" % (record['name'], record['url']),
+                    })
+
+            if len(result) > 1:
+                raise Exception('Human sacrifice, dogs and cats living together, mass hysteria!')
+
+
+    def save(self):
+        for key, record in self.data.items():
+            scraperwiki.sqlite.save(
+                unique_keys=['slug'], data=record, table_name='lgbce_reviews')
+
+    def send_notifications(self):
+        if not SEND_NOTIFICATIONS:
+            return
+        if SLACK_WEBHOOK_URL:
+            for message in self.slack_messages:
+                post_slack_message(message)
+        if GITHUB_API_KEY:
+            for issue in self.github_issues:
+                raise_github_issue(issue['title'], issue['body'])
+
+    def cleanup(self):
+        # remove any stale records from the DB
+        if not self.data:
+            return
+        placeholders = '(' + ', '.join(['?' for rec in self.data]) + ')'
         result = scraperwiki.sql.execute(
-            "DELETE FROM 'bce_completed' WHERE url NOT IN " + placeholders, urls)
+            "DELETE FROM 'lgbce_reviews' WHERE slug NOT IN " + placeholders,
+            [slug for slug in self.data]
+        )
+
+    def scrape(self):
+        self.scrape_index()
+        self.make_notifications()
+        self.save()
+        self.send_notifications()
+        self.cleanup()
 
 
-scrape_bce_completed()
+scraper = LgbceScraper()
+scraper.scrape()
