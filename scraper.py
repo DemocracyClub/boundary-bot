@@ -14,6 +14,7 @@ import scraperwiki
 
 
 SEND_NOTIFICATIONS = True
+RUN_CHECKS = True
 BASE_URL = "http://www.lgbce.org.uk/current-reviews"
 
 
@@ -40,6 +41,10 @@ def raise_github_issue(title, body):
     github.raise_issue(owner, repo, title, body)
 
 
+class ScraperException(Exception):
+    pass
+
+
 class LgbceSpider(scrapy.Spider):
     name = "reviews"
     custom_settings = {
@@ -53,7 +58,17 @@ class LgbceSpider(scrapy.Spider):
     start_urls = [BASE_URL]
 
     def parse(self, response):
-        for desc in response.css('div.tab-1::attr(desc)').extract():
+
+        # the class we're looking for will be called 'tab-1'
+        # ...except when it is called something else
+        potential_selectors = ['div.tab-1', 'div.-tab-1', 'div.tab-2']
+        selector = potential_selectors[0]
+        for s in potential_selectors:
+            if len(response.css(s)) > 0:
+                selector = s
+                break
+
+        for desc in response.css("%s::attr(desc)" % (selector)).extract():
             yield {
                 'slug': response.url.split('/')[-1],
                 'latest_event': desc
@@ -112,13 +127,14 @@ class LgbceScraper:
         self.github_issues = []
 
     def scrape_index(self):
+        expected_headings = [self.CURRENT_LABEL, self.COMPLETED_LABEL]
         html = scraperwiki.scrape(BASE_URL)
         root = lxml.html.fromstring(html)
 
         h2_tags = root.cssselect('h2')
         for h2 in h2_tags:
             text = str(h2.text)
-            if text in [self.CURRENT_LABEL, self.COMPLETED_LABEL]:
+            if text in expected_headings:
                 # iterate over boundary reviews:
                 for ul in h2.getnext().iterchildren():
                     link = ul.findall('a')[0]
@@ -131,12 +147,47 @@ class LgbceScraper:
                         'status': text,
                         'latest_event': None,
                     }
+            else:
+                raise ScraperException(
+                    'Found a heading other than %s' % (str(expected_headings)))
 
     def attach_spider_data(self):
         wrapper = SpiderWrapper(LgbceSpider)
         review_details = wrapper.run_spider()
         for area in review_details:
             self.data[area['slug']]['latest_event'] = area['latest_event']
+
+    def run_checks(self):
+        # perform some consistency checks
+        # and raise an error if unexpected things have happened
+        for key, record in self.data.items():
+            result = scraperwiki.sql.select(
+                "* FROM 'lgbce_reviews' WHERE slug=?", record['slug'])
+
+            if record['latest_event'] is None:
+                # we've failed to scrape the latest review event
+                raise ScraperException(
+                    "Failed to populate 'latest_event' field:\n%s" % (str(record)))
+
+            if len(result) == 0 and record['status'] == self.COMPLETED_LABEL:
+                # we shouldn't have found a record for the first time when it is completed
+                # we should find it under review and then it should move to completed
+                raise ScraperException(
+                    "New record found but status is '%s':\n%s" %\
+                    (self.COMPLETED_LABEL, str(record))
+                )
+
+            if len(result) == 1 and record['status'] == self.CURRENT_LABEL and result[0]['status'] == self.COMPLETED_LABEL:
+                # reviews shouldn't move backwards from completed to current
+                raise ScraperException(
+                    "Record status has changed from '%s' to '%s':\n%s" %\
+                    (self.COMPLETED_LABEL, self.CURRENT_LABEL, str(record))
+                )
+
+            if len(result) > 1:
+                # society has collapsed :(
+                raise ScraperException(
+                    'Human sacrifice, dogs and cats living together, mass hysteria!')
 
     def make_notifications(self):
         for key, record in self.data.items():
@@ -163,10 +214,6 @@ class LgbceScraper:
                     if 'electoral changes' in record['latest_event'].lower():
                         message = ':rotating_light: ' + message + ' :alarm_clock:'
                     self.slack_messages.append(message)
-
-            if len(result) > 1:
-                # society has collapsed :(
-                raise Exception('Human sacrifice, dogs and cats living together, mass hysteria!')
 
     def save(self):
         for key, record in self.data.items():
@@ -196,6 +243,8 @@ class LgbceScraper:
     def scrape(self):
         self.scrape_index()
         self.attach_spider_data()
+        if RUN_CHECKS:
+            self.run_checks()
         self.make_notifications()
         self.save()
         self.send_notifications()
