@@ -157,8 +157,15 @@ class LgbceScraper:
                         'title': 'Completed boundary review for %s' % (record['name']),
                         'body': "Completed boundary review for %s: %s" % (record['name'], record['url']),
                     })
+                if result[0]['latest_event'] != record['latest_event']:
+                    message = "%s boundary review status updated to '%s': %s" %\
+                        (record['name'], record['latest_event'], record['url'])
+                    if 'electoral changes' in record['latest_event'].lower():
+                        message = ':rotating_light: ' + message + ' :alarm_clock:'
+                    self.slack_messages.append(message)
 
             if len(result) > 1:
+                # society has collapsed :(
                 raise Exception('Human sacrifice, dogs and cats living together, mass hysteria!')
 
     def save(self):
