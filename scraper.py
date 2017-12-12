@@ -1,6 +1,10 @@
+import json
 import lxml.html
 import os
+import scrapy
+import tempfile
 from polling_bot.brain import SlackClient, GitHubClient
+from scrapy.crawler import CrawlerProcess
 from sqlalchemy.exc import OperationalError
 
 # hack to override sqlite database filename
@@ -10,6 +14,8 @@ import scraperwiki
 
 
 SEND_NOTIFICATIONS = True
+BASE_URL = "http://www.lgbce.org.uk/current-reviews"
+
 
 try:
     SLACK_WEBHOOK_URL = os.environ['MORPH_BOUNDARY_BOT_SLACK_WEBHOOK_URL']
@@ -34,9 +40,61 @@ def raise_github_issue(title, body):
     github.raise_issue(owner, repo, title, body)
 
 
+class LgbceSpider(scrapy.Spider):
+    name = "reviews"
+    custom_settings = {
+        'CONCURRENT_REQUESTS': 5,  # keep the concurrent requests low
+        'DOWNLOAD_DELAY': 0.25,  # throttle the crawl speed a bit
+        'COOKIES_ENABLED': False,
+        'USER_AGENT': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:56.0) Gecko/20100101 Firefox/56.0',
+        'FEED_FORMAT': 'json',
+    }
+    allowed_domains = ["lgbce.org.uk"]
+    start_urls = [BASE_URL]
+
+    def parse(self, response):
+        for desc in response.css('div.tab-1::attr(desc)').extract():
+            yield {
+                'slug': response.url.split('/')[-1],
+                'latest_event': desc
+            }
+
+        for next_page in response.css('ul > li > a'):
+            if 'current-reviews' in next_page.extract():
+                yield response.follow(next_page, self.parse)
+
+
+class SpiderWrapper:
+
+    # Wrapper class that allows us to run a scrapy spider
+    # and return the result as a list
+
+    def __init__(self, spider):
+        self.spider = spider
+
+    def run_spider(self):
+        # Scrapy likes to dump its output to file
+        # so we will write it out to a file and read it back in.
+        # The 'proper' way to do this is probably to write a custom Exporter
+        # but this will do for now
+
+        tmpfile = tempfile.NamedTemporaryFile().name
+
+        process = CrawlerProcess({
+            'FEED_URI': tmpfile,
+        })
+        process.crawl(self.spider)
+        process.start()
+
+        results = json.load(open(tmpfile))
+
+        os.remove(tmpfile)
+
+        return results
+
+
 class LgbceScraper:
 
-    BASE_URL = "http://www.lgbce.org.uk/current-reviews"
     CURRENT_LABEL = 'Current Reviews'
     COMPLETED_LABEL = 'Recently Completed'
 
@@ -47,14 +105,14 @@ class LgbceScraper:
                 name TEXT,
                 url TEXT,
                 status TEXT,
-                latest_status TEXT
+                latest_event TEXT
             );""")
         self.data = {}
         self.slack_messages = []
         self.github_issues = []
 
     def scrape_index(self):
-        html = scraperwiki.scrape(self.BASE_URL)
+        html = scraperwiki.scrape(BASE_URL)
         root = lxml.html.fromstring(html)
 
         h2_tags = root.cssselect('h2')
@@ -73,6 +131,12 @@ class LgbceScraper:
                         'status': text,
                         'latest_event': None,
                     }
+
+    def attach_spider_data(self):
+        wrapper = SpiderWrapper(LgbceSpider)
+        review_details = wrapper.run_spider()
+        for area in review_details:
+            self.data[area['slug']]['latest_event'] = area['latest_event']
 
     def make_notifications(self):
         for key, record in self.data.items():
@@ -96,7 +160,6 @@ class LgbceScraper:
 
             if len(result) > 1:
                 raise Exception('Human sacrifice, dogs and cats living together, mass hysteria!')
-
 
     def save(self):
         for key, record in self.data.items():
@@ -125,11 +188,13 @@ class LgbceScraper:
 
     def scrape(self):
         self.scrape_index()
+        self.attach_spider_data()
         self.make_notifications()
         self.save()
         self.send_notifications()
         self.cleanup()
 
 
-scraper = LgbceScraper()
-scraper.scrape()
+if __name__ == '__main__':
+    scraper = LgbceScraper()
+    scraper.scrape()
