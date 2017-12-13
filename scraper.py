@@ -131,16 +131,17 @@ class LgbceScraper:
 
     CURRENT_LABEL = 'Current Reviews'
     COMPLETED_LABEL = 'Recently Completed'
+    TABLE_NAME = 'lgbce_reviews'
 
     def __init__(self):
         scraperwiki.sql.execute("""
-            CREATE TABLE IF NOT EXISTS lgbce_reviews (
+            CREATE TABLE IF NOT EXISTS %s (
                 slug TEXT PRIMARY KEY,
                 name TEXT,
                 url TEXT,
                 status TEXT,
                 latest_event TEXT
-            );""")
+            );""" % self.TABLE_NAME)
         self.data = {}
         self.slack_messages = []
         self.github_issues = []
@@ -198,7 +199,7 @@ class LgbceScraper:
                 return
 
             result = scraperwiki.sql.select(
-                "* FROM 'lgbce_reviews' WHERE slug=?", record['slug'])
+                "* FROM %s WHERE slug=?" % (self.TABLE_NAME), record['slug'])
 
             if len(result) == 0 and record['status'] == self.COMPLETED_LABEL:
                 # we shouldn't have found a record for the first time when it is completed
@@ -223,7 +224,7 @@ class LgbceScraper:
     def make_notifications(self):
         for key, record in self.data.items():
             result = scraperwiki.sql.select(
-                "* FROM 'lgbce_reviews' WHERE slug=?", record['slug'])
+                "* FROM %s WHERE slug=?" % (self.TABLE_NAME), record['slug'])
 
             if len(result) == 0:
                 # we've not seen this boundary review before
@@ -249,7 +250,7 @@ class LgbceScraper:
     def save(self):
         for key, record in self.data.items():
             scraperwiki.sqlite.save(
-                unique_keys=['slug'], data=record, table_name='lgbce_reviews')
+                unique_keys=['slug'], data=record, table_name=self.TABLE_NAME)
 
     def send_notifications(self):
 
@@ -279,7 +280,7 @@ class LgbceScraper:
             return
         placeholders = '(' + ', '.join(['?' for rec in self.data]) + ')'
         result = scraperwiki.sql.execute(
-            "DELETE FROM 'lgbce_reviews' WHERE slug NOT IN " + placeholders,
+            ("DELETE FROM %s WHERE slug NOT IN " + placeholders) % (self.TABLE_NAME),
             [slug for slug in self.data]
         )
 
