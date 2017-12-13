@@ -110,6 +110,16 @@ class SpiderWrapper:
 
 class LgbceScraper:
 
+    """
+    Scraper for The Local Government Boundary Commission for England's website
+
+    By scraping the LGBCE website we can:
+    - Discover boundary reviews
+    - Detect when the status of a review has been updated
+    - Send Slack messages and raise GitHub issues
+      based on events in the boundary review process
+    """
+
     CURRENT_LABEL = 'Current Reviews'
     COMPLETED_LABEL = 'Recently Completed'
 
