@@ -4,3 +4,6 @@ data.sqlite
 # Ignore python cache files
 __pycache__/
 *.pyc
+
+# Ignore Unit test coverage
+.coverage
