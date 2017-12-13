@@ -38,16 +38,53 @@ except KeyError:
     GITHUB_API_KEY = None
 
 
-def post_slack_message(message):
-    slack = SlackClient(SLACK_WEBHOOK_URL)
-    slack.post_message(message)
+class SlackHelper:
+
+    def __init__(self):
+        self.messages = []
+
+    def append_new_review_message(self, record):
+        self.messages.append(
+            "New boundary review found for %s: %s" %\
+            (record['name'], record['url'])
+        )
+
+    def append_completed_review_message(self, record):
+        self.messages.append(
+            "Completed boundary review for %s: %s" %\
+            (record['name'], record['url'])
+        )
+
+    def append_event_message(self, record):
+        message = "%s boundary review status updated to '%s': %s" %\
+            (record['name'], record['latest_event'], record['url'])
+        if 'electoral changes' in record['latest_event'].lower():
+            message = ':rotating_light: ' + message + ' :alarm_clock:'
+        self.messages.append(message)
+
+    def post_messages(self):
+        client = SlackClient(SLACK_WEBHOOK_URL)
+        for message in self.messages:
+            client.post_message(message)
 
 
-def raise_github_issue(title, body):
-    owner = 'DemocracyClub'
-    repo = 'EveryElection'
-    github = GitHubClient(GITHUB_API_KEY)
-    github.raise_issue(owner, repo, title, body)
+class GitHubHelper:
+
+    def __init__(self):
+        self.issues = []
+
+    def append_completed_review_issue(self, record):
+        self.issues.append({
+            'title': 'Completed boundary review for %s' % (record['name']),
+            'body': "Completed boundary review for %s: %s" % (record['name'], record['url']),
+        })
+
+    def raise_issues(self):
+        owner = 'DemocracyClub'
+        repo = 'EveryElection'
+        client = GitHubClient(GITHUB_API_KEY)
+        for issue in self.issues:
+            client.raise_issue(owner, repo, issue['title'], issue['body'])
 
 
 class ScraperException(Exception):
@@ -143,8 +180,8 @@ class LgbceScraper:
                 latest_event TEXT
             );""" % self.TABLE_NAME)
         self.data = {}
-        self.slack_messages = []
-        self.github_issues = []
+        self.slack_helper = SlackHelper()
+        self.github_helper = GitHubHelper()
 
     def scrape_index(self):
         expected_headings = [self.CURRENT_LABEL, self.COMPLETED_LABEL]
@@ -228,24 +265,15 @@ class LgbceScraper:
 
             if len(result) == 0:
                 # we've not seen this boundary review before
-                self.slack_messages.append(
-                    "New boundary review found for %s: %s" % (record['name'], record['url']))
+                self.slack_helper.append_new_review_message(record)
 
             if len(result) == 1:
                 # we've already got our eye on this one
                 if result[0]['status'] == self.CURRENT_LABEL and record['status'] == self.COMPLETED_LABEL:
-                    self.slack_messages.append(
-                        "Completed boundary review for %s: %s" % (record['name'], record['url']))
-                    self.github_issues.append({
-                        'title': 'Completed boundary review for %s' % (record['name']),
-                        'body': "Completed boundary review for %s: %s" % (record['name'], record['url']),
-                    })
+                    self.slack_helper.append_completed_review_message(record)
+                    self.github_helper.append_completed_review_issue(record)
                 if result[0]['latest_event'] != record['latest_event']:
-                    message = "%s boundary review status updated to '%s': %s" %\
-                        (record['name'], record['latest_event'], record['url'])
-                    if 'electoral changes' in record['latest_event'].lower():
-                        message = ':rotating_light: ' + message + ' :alarm_clock:'
-                    self.slack_messages.append(message)
+                    self.slack_helper.append_event_message(record)
 
     def save(self):
         for key, record in self.data.items():
@@ -259,20 +287,18 @@ class LgbceScraper:
         pp = pprint.PrettyPrinter(indent=2)
         print('Slack messages:')
         print('----')
-        pp.pprint(self.slack_messages)
+        pp.pprint(self.slack_helper.messages)
         print('Github issues:')
         print('----')
-        pp.pprint(self.github_issues)
+        pp.pprint(self.github_helper.issues)
 
         if not SEND_NOTIFICATIONS:
             return
 
         if SLACK_WEBHOOK_URL:
-            for message in self.slack_messages:
-                post_slack_message(message)
+            self.slack_helper.post_messages()
         if GITHUB_API_KEY:
-            for issue in self.github_issues:
-                raise_github_issue(issue['title'], issue['body'])
+            self.github_helper.raise_issues()
 
     def cleanup(self):
         # remove any stale records from the DB
