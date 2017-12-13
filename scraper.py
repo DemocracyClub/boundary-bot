@@ -1,6 +1,7 @@
 import json
 import lxml.html
 import os
+import pprint
 import scrapy
 import tempfile
 from polling_bot.brain import SlackClient, GitHubClient
@@ -251,8 +252,20 @@ class LgbceScraper:
                 unique_keys=['slug'], data=record, table_name='lgbce_reviews')
 
     def send_notifications(self):
+
+        # write the notifications we've generated to
+        # send to the console as well for debug purposes
+        pp = pprint.PrettyPrinter(indent=2)
+        print('Slack messages:')
+        print('----')
+        pp.pprint(self.slack_messages)
+        print('Github issues:')
+        print('----')
+        pp.pprint(self.github_issues)
+
         if not SEND_NOTIFICATIONS:
             return
+
         if SLACK_WEBHOOK_URL:
             for message in self.slack_messages:
                 post_slack_message(message)
