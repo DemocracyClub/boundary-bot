@@ -13,8 +13,16 @@ os.environ['SCRAPERWIKI_DATABASE_NAME'] = 'sqlite:///data.sqlite'
 import scraperwiki
 
 
-SEND_NOTIFICATIONS = True
-RUN_CHECKS = True
+"""
+Set BOOTSTRAP_MODE to True to initialize an empty DB
+
+If we are starting with an empty database we want to
+- ensure we don't send any notifications and
+- disable some consistency checks
+"""
+BOOTSTRAP_MODE = False
+SEND_NOTIFICATIONS = not(BOOTSTRAP_MODE)
+
 BASE_URL = "http://www.lgbce.org.uk/current-reviews"
 
 
@@ -178,13 +186,18 @@ class LgbceScraper:
         # perform some consistency checks
         # and raise an error if unexpected things have happened
         for key, record in self.data.items():
-            result = scraperwiki.sql.select(
-                "* FROM 'lgbce_reviews' WHERE slug=?", record['slug'])
 
             if record['latest_event'] is None:
                 # we've failed to scrape the latest review event
                 raise ScraperException(
                     "Failed to populate 'latest_event' field:\n%s" % (str(record)))
+
+            if BOOTSTRAP_MODE:
+                # skip the next checks if we are initializing an empty DB
+                return
+
+            result = scraperwiki.sql.select(
+                "* FROM 'lgbce_reviews' WHERE slug=?", record['slug'])
 
             if len(result) == 0 and record['status'] == self.COMPLETED_LABEL:
                 # we shouldn't have found a record for the first time when it is completed
@@ -260,8 +273,7 @@ class LgbceScraper:
     def scrape(self):
         self.scrape_index()
         self.attach_spider_data()
-        if RUN_CHECKS:
-            self.run_checks()
+        self.run_checks()
         self.make_notifications()
         self.save()
         self.send_notifications()
