@@ -194,26 +194,29 @@ class LgbceScraper:
         root = lxml.html.fromstring(html)
 
         h2_tags = root.cssselect('h2')
+
+        found_headings = [h2.text for h2 in h2_tags]
+        if expected_headings != found_headings:
+            raise ScraperException(
+                "Unexpected headings: Found %s, expected %s" %\
+                (str(found_headings), str(expected_headings))
+            )
+
         for h2 in h2_tags:
             text = str(h2.text)
-            if text in expected_headings:
-                # iterate over boundary reviews:
-                for ul in h2.getnext().iterchildren():
-                    link = ul.findall('a')[0]
-                    url = link.get('href')
-                    slug = url.split('/')[-1]
-                    self.data[slug] = {
-                        'slug': slug,
-                        'name': link.text,
-                        'url': url,
-                        'status': text,
-                        'latest_event': None,
-                    }
-            else:
-                raise ScraperException(
-                    "Unexpected heading: Found '%s', expected %s" %\
-                    (str(h2.text), str(expected_headings))
-                )
+            # iterate over boundary reviews:
+            for ul in h2.getnext().iterchildren():
+                link = ul.findall('a')[0]
+                url = link.get('href')
+                slug = url.split('/')[-1]
+                self.data[slug] = {
+                    'slug': slug,
+                    'name': link.text,
+                    'url': url,
+                    'status': text,
+                    'latest_event': None,
+                }
+
 
     def attach_spider_data(self):
         wrapper = SpiderWrapper(LgbceSpider)
