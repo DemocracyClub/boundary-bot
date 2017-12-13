@@ -149,12 +149,19 @@ class LgbceScraper:
                     }
             else:
                 raise ScraperException(
-                    'Found a heading other than %s' % (str(expected_headings)))
+                    "Unexpected heading: Found '%s', expected %s" %\
+                    (str(h2.text), str(expected_headings))
+                )
 
     def attach_spider_data(self):
         wrapper = SpiderWrapper(LgbceSpider)
         review_details = wrapper.run_spider()
         for area in review_details:
+            if area['slug'] not in self.data:
+                raise ScraperException(
+                    "Unexpected slug: Found '%s', expected %s" %\
+                    (area['slug'], str([rec for rec in self.data]))
+                )
             self.data[area['slug']]['latest_event'] = area['latest_event']
 
     def run_checks(self):
