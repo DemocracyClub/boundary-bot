@@ -169,6 +169,8 @@ class LgbceScraper:
     CURRENT_LABEL = 'Current Reviews'
     COMPLETED_LABEL = 'Recently Completed'
     TABLE_NAME = 'lgbce_reviews'
+    BOOTSTRAP_MODE = BOOTSTRAP_MODE
+    SEND_NOTIFICATIONS = SEND_NOTIFICATIONS
 
     def __init__(self):
         scraperwiki.sql.execute("""
@@ -233,7 +235,7 @@ class LgbceScraper:
                 raise ScraperException(
                     "Failed to populate 'latest_event' field:\n%s" % (str(record)))
 
-            if BOOTSTRAP_MODE:
+            if self.BOOTSTRAP_MODE:
                 # skip the next checks if we are initializing an empty DB
                 return
 
@@ -294,7 +296,7 @@ class LgbceScraper:
         print('----')
         pp.pprint(self.github_helper.issues)
 
-        if not SEND_NOTIFICATIONS:
+        if not self.SEND_NOTIFICATIONS:
             return
 
         if SLACK_WEBHOOK_URL:
