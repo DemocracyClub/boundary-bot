@@ -184,8 +184,10 @@ class LgbceScraper:
         self.github_helper = GitHubHelper()
 
     def scrape_index(self):
+        return scraperwiki.scrape(BASE_URL)
+
+    def parse_index(self, html):
         expected_headings = [self.CURRENT_LABEL, self.COMPLETED_LABEL]
-        html = scraperwiki.scrape(BASE_URL)
         root = lxml.html.fromstring(html)
 
         h2_tags = root.cssselect('h2')
@@ -311,7 +313,7 @@ class LgbceScraper:
         )
 
     def scrape(self):
-        self.scrape_index()
+        self.parse_index(self.scrape_index())
         self.attach_spider_data()
         self.run_checks()
         self.make_notifications()
