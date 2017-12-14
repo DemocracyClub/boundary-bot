@@ -229,7 +229,7 @@ class LgbceScraper:
                 )
             self.data[area['slug']]['latest_event'] = area['latest_event']
 
-    def run_checks(self):
+    def validate(self):
         # perform some consistency checks
         # and raise an error if unexpected things have happened
         for key, record in self.data.items():
@@ -265,6 +265,7 @@ class LgbceScraper:
                 # society has collapsed :(
                 raise ScraperException(
                     'Human sacrifice, dogs and cats living together, mass hysteria!')
+        return True
 
     def make_notifications(self):
         for key, record in self.data.items():
@@ -321,7 +322,7 @@ class LgbceScraper:
     def scrape(self):
         self.parse_index(self.scrape_index())
         self.attach_spider_data()
-        self.run_checks()
+        self.validate()
         self.make_notifications()
         self.save()
         self.send_notifications()
