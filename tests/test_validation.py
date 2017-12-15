@@ -36,6 +36,10 @@ class ValidationTests(unittest.TestCase):
         with self.assertRaises(ScraperException):
             scraper.validate()
 
+        # this check should be skipped in bootstrap mode
+        scraper.BOOTSTRAP_MODE = True
+        self.assertTrue(scraper.validate())
+
     def test_backwards_move(self):
         # old status is 'Recently Completed', new status is 'Current Reviews'
         scraper = LgbceScraper()
@@ -47,3 +51,7 @@ class ValidationTests(unittest.TestCase):
         scraper.data['allerdale']['status'] = scraper.CURRENT_LABEL
         with self.assertRaises(ScraperException):
             scraper.validate()
+
+        # this check should be skipped in bootstrap mode
+        scraper.BOOTSTRAP_MODE = True
+        self.assertTrue(scraper.validate())

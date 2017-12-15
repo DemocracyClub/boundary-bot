@@ -241,7 +241,7 @@ class LgbceScraper:
 
             if self.BOOTSTRAP_MODE:
                 # skip the next checks if we are initializing an empty DB
-                return
+                return True
 
             result = scraperwiki.sql.select(
                 "* FROM %s WHERE slug=?" % (self.TABLE_NAME), record['slug'])
