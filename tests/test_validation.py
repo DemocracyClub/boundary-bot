@@ -15,6 +15,7 @@ class ValidationTests(unittest.TestCase):
             'babergh': base_data['babergh'].copy(),
         }
         scraper.data['babergh']['latest_event'] = 'foo'
+        scraper.BOOTSTRAP_MODE = False
         self.assertTrue(scraper.validate())
 
     def test_null_event(self):
@@ -23,6 +24,7 @@ class ValidationTests(unittest.TestCase):
         scraper.data = {
             'babergh': base_data['babergh'].copy(),
         }
+        scraper.BOOTSTRAP_MODE = False
         with self.assertRaises(ScraperException):
             scraper.validate()
 
@@ -33,6 +35,8 @@ class ValidationTests(unittest.TestCase):
             'allerdale': base_data['allerdale'].copy(),
         }
         scraper.data['allerdale']['latest_event'] = 'foo'
+
+        scraper.BOOTSTRAP_MODE = False
         with self.assertRaises(ScraperException):
             scraper.validate()
 
@@ -49,6 +53,8 @@ class ValidationTests(unittest.TestCase):
         scraper.data['allerdale']['latest_event'] = 'foo'
         scraper.save()
         scraper.data['allerdale']['status'] = scraper.CURRENT_LABEL
+
+        scraper.BOOTSTRAP_MODE = False
         with self.assertRaises(ScraperException):
             scraper.validate()
 
