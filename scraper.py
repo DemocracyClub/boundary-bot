@@ -118,7 +118,7 @@ class LgbceSpider(scrapy.Spider):
         for desc in response.css("%s::attr(desc)" % (selector)).extract():
             yield {
                 'slug': response.url.split('/')[-1],
-                'latest_event': desc
+                'latest_event': desc.strip()
             }
 
         for next_page in response.css('ul > li > a'):
