@@ -115,11 +115,22 @@ class LgbceSpider(scrapy.Spider):
                 selector = s
                 break
 
-        for desc in response.css("%s::attr(desc)" % (selector)).extract():
-            yield {
+        desc = response.css("%s::attr(desc)" % (selector)).extract()
+        if len(desc) == 1:
+            rec = {
                 'slug': response.url.split('/')[-1],
-                'latest_event': desc.strip()
+                'latest_event': desc[0].strip(),
+                'shapefiles': None,
             }
+
+            # find any links to zip files in the page
+            zipfiles = response.xpath("/html/body//a[contains(@href,'.zip')]/@href").extract()
+            # if we found exactly one, assume that's what we're looking for
+            # the files we're looking for are not very consistently named :(
+            if len(zipfiles) == 1:
+                rec['shapefiles'] = zipfiles[0]
+
+            yield rec
 
         for next_page in response.css('ul > li > a'):
             if 'current-reviews' in next_page.extract():
@@ -180,7 +191,8 @@ class LgbceScraper:
                 name TEXT,
                 url TEXT,
                 status TEXT,
-                latest_event TEXT
+                latest_event TEXT,
+                shapefiles TEXT
             );""" % self.TABLE_NAME)
         self.data = {}
         self.slack_helper = SlackHelper()
@@ -215,6 +227,7 @@ class LgbceScraper:
                     'url': url,
                     'status': text,
                     'latest_event': None,
+                    'shapefiles': None,
                 }
 
 
@@ -228,6 +241,7 @@ class LgbceScraper:
                     (area['slug'], str([rec for rec in self.data]))
                 )
             self.data[area['slug']]['latest_event'] = area['latest_event']
+            self.data[area['slug']]['shapefiles'] = area['shapefiles']
 
     def validate(self):
         # perform some consistency checks

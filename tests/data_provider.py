@@ -7,6 +7,7 @@ base_data = {
         'url': 'http://www.lgbce.org.uk/current-reviews/north-west/cumbria/allerdale',
         'status': 'Recently Completed',
         'latest_event': None,
+        'shapefiles': None,
     },
     'ashford': {
         'slug': 'ashford',
@@ -14,6 +15,7 @@ base_data = {
         'url': 'http://www.lgbce.org.uk/current-reviews/south-east/kent/ashford',
         'status': 'Recently Completed',
         'latest_event': None,
+        'shapefiles': None,
     },
     'babergh': {
         'slug': 'babergh',
@@ -21,6 +23,7 @@ base_data = {
         'url': 'http://www.lgbce.org.uk/current-reviews/eastern/suffolk/babergh',
         'status': 'Current Reviews',
         'latest_event': None,
+        'shapefiles': None,
     },
     'basingstoke-and-deane': {
         'slug': 'basingstoke-and-deane',
@@ -28,5 +31,6 @@ base_data = {
         'url': 'http://www.lgbce.org.uk/current-reviews/south-east/hampshire/basingstoke-and-deane',
         'status': 'Current Reviews',
         'latest_event': None,
+        'shapefiles': None,
     },
 }
