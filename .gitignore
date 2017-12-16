@@ -1,0 +1,9 @@
+# output of scraper
+data.sqlite
+
+# python cache files
+__pycache__/
+*.pyc
+
+# unit test coverage
+.coverage
