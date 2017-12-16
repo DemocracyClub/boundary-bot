@@ -8,6 +8,7 @@ base_data = {
         'status': 'Recently Completed',
         'latest_event': None,
         'shapefiles': None,
+        'eco_made': 0,
     },
     'ashford': {
         'slug': 'ashford',
@@ -16,6 +17,7 @@ base_data = {
         'status': 'Recently Completed',
         'latest_event': None,
         'shapefiles': None,
+        'eco_made': 0,
     },
     'babergh': {
         'slug': 'babergh',
@@ -24,6 +26,7 @@ base_data = {
         'status': 'Current Reviews',
         'latest_event': None,
         'shapefiles': None,
+        'eco_made': 0,
     },
     'basingstoke-and-deane': {
         'slug': 'basingstoke-and-deane',
@@ -32,5 +35,6 @@ base_data = {
         'status': 'Current Reviews',
         'latest_event': None,
         'shapefiles': None,
+        'eco_made': 0,
     },
 }

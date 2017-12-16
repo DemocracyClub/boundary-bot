@@ -10,11 +10,13 @@ def mock_run_spider(obj):
             "slug": "basingstoke-and-deane",
             "latest_event": "Consultation on warding arrangements",
             "shapefiles": None,
+            "eco_made": 0,
         },
         {
             "slug": "babergh",
             "latest_event": "The Babergh (Electoral Changes) Order 2017",
             "shapefiles": "http://www.lgbce.org.uk/__data/assets/file/derpderp.zip",
+            "eco_made": 1,
         }
     ]
 
@@ -37,11 +39,13 @@ class AttachSpiderTests(unittest.TestCase):
             "http://www.lgbce.org.uk/__data/assets/file/derpderp.zip",
             scraper.data['babergh']['shapefiles']
         )
+        self.assertEqual(1, scraper.data['babergh']['eco_made'])
         self.assertEqual(
             "Consultation on warding arrangements",
             scraper.data['basingstoke-and-deane']['latest_event']
         )
         self.assertIsNone(scraper.data['basingstoke-and-deane']['shapefiles'])
+        self.assertEqual(0, scraper.data['basingstoke-and-deane']['eco_made'])
 
     @mock.patch("scraper.SpiderWrapper.run_spider", mock_run_spider)
     def test_unexpected(self):

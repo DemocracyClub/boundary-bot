@@ -59,7 +59,7 @@ class SlackHelper:
     def append_event_message(self, record):
         message = "%s boundary review status updated to '%s': %s" %\
             (record['name'], record['latest_event'], record['url'])
-        if 'electoral changes' in record['latest_event'].lower():
+        if 'electoral change' in record['latest_event'].lower():
             message = ':rotating_light: ' + message + ' :alarm_clock:'
         self.messages.append(message)
 
@@ -121,6 +121,7 @@ class LgbceSpider(scrapy.Spider):
                 'slug': response.url.split('/')[-1],
                 'latest_event': desc[0].strip(),
                 'shapefiles': None,
+                'eco_made': 0,
             }
 
             # find any links to zip files in the page
@@ -129,6 +130,15 @@ class LgbceSpider(scrapy.Spider):
             # the files we're looking for are not very consistently named :(
             if len(zipfiles) == 1:
                 rec['shapefiles'] = zipfiles[0]
+
+            # try to work out if the ECO is 'made'
+            eco_text = 'electoral change'
+            eco_made_text = "have now successfully completed a 40 day period "
+            "of parliamentary scrutiny and will come into force"
+            div = response.css(selector).extract()
+
+            if eco_text in desc[0].lower() and eco_made_text in div[0].lower():
+                rec['eco_made'] = 1
 
             yield rec
 
@@ -192,7 +202,8 @@ class LgbceScraper:
                 url TEXT,
                 status TEXT,
                 latest_event TEXT,
-                shapefiles TEXT
+                shapefiles TEXT,
+                eco_made INT DEFAULT 0
             );""" % self.TABLE_NAME)
         self.data = {}
         self.slack_helper = SlackHelper()
@@ -228,6 +239,7 @@ class LgbceScraper:
                     'status': text,
                     'latest_event': None,
                     'shapefiles': None,
+                    'eco_made': 0,
                 }
 
 
@@ -242,6 +254,7 @@ class LgbceScraper:
                 )
             self.data[area['slug']]['latest_event'] = area['latest_event']
             self.data[area['slug']]['shapefiles'] = area['shapefiles']
+            self.data[area['slug']]['eco_made'] = area['eco_made']
 
     def validate(self):
         # perform some consistency checks
