@@ -39,6 +39,10 @@ except KeyError:
     GITHUB_API_KEY = None
 
 
+def is_eco(event):
+    return 'electoral change' in event.lower()
+
+
 class SlackHelper:
 
     def __init__(self):
@@ -59,7 +63,7 @@ class SlackHelper:
     def append_event_message(self, record):
         message = "%s boundary review status updated to '%s': %s" %\
             (record['name'], record['latest_event'], record['url'])
-        if 'electoral change' in record['latest_event'].lower():
+        if is_eco(record['latest_event']):
             message = ':rotating_light: ' + message + ' :alarm_clock:'
         self.messages.append(message)
 
@@ -132,12 +136,11 @@ class LgbceSpider(scrapy.Spider):
                 rec['shapefiles'] = zipfiles[0]
 
             # try to work out if the ECO is 'made'
-            eco_text = 'electoral change'
             eco_made_text = "have now successfully completed a 40 day period "
             "of parliamentary scrutiny and will come into force"
             div = response.css(selector).extract()
 
-            if eco_text in desc[0].lower() and eco_made_text in div[0].lower():
+            if is_eco(desc[0]) and eco_made_text in div[0].lower():
                 rec['eco_made'] = 1
 
             yield rec
@@ -316,7 +319,7 @@ class LgbceScraper:
 
             if len(result) == 1:
                 # we've already got our eye on this one
-                if 'electoral change' in record['latest_event'].lower() and\
+                if is_eco(record['latest_event']) and\
                         result[0]['eco_made'] == 0 and\
                         record['eco_made'] == 1:
                     self.slack_helper.append_completed_review_message(record)
