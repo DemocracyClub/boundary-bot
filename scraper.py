@@ -316,7 +316,9 @@ class LgbceScraper:
 
             if len(result) == 1:
                 # we've already got our eye on this one
-                if result[0]['status'] == self.CURRENT_LABEL and record['status'] == self.COMPLETED_LABEL:
+                if 'electoral change' in record['latest_event'].lower() and\
+                        result[0]['eco_made'] == 0 and\
+                        record['eco_made'] == 1:
                     self.slack_helper.append_completed_review_message(record)
                     self.github_helper.append_completed_review_issue(record)
                 if result[0]['latest_event'] != record['latest_event']:

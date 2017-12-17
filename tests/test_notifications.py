@@ -44,14 +44,15 @@ class NotificationTests(unittest.TestCase):
         assert "boundary review status updated to 'bar'" in scraper.slack_helper.messages[0]
         self.assertEqual(0, len(scraper.github_helper.issues))
 
-    def test_status_changed(self):
+    def test_eco_made(self):
         scraper = LgbceScraper()
         scraper.data = {
-            'babergh': base_data['babergh'].copy(),
+            'allerdale': base_data['allerdale'].copy(),
         }
-        scraper.data['babergh']['latest_event'] = 'foo'
+        scraper.data['allerdale']['latest_event'] = 'The Allerdale Electoral Changes order'
+        scraper.data['allerdale']['eco_made'] = 0
         scraper.save()
-        scraper.data['babergh']['status'] = 'Recently Completed'
+        scraper.data['allerdale']['eco_made'] = 1
         scraper.make_notifications()
         self.assertEqual(1, len(scraper.slack_helper.messages))
         assert 'Completed boundary review' in scraper.slack_helper.messages[0]
