@@ -1,10 +1,15 @@
+import datetime
 import json
 import lxml.html
 import os
 import pprint
 import scrapy
 import tempfile
-from polling_bot.brain import SlackClient, GitHubClient
+from collections import OrderedDict
+from commitment import GitHubCredentials
+from commitment import GitHubClient as GutHubSyncClient
+from polling_bot.brain import SlackClient
+from polling_bot.brain import GitHubClient as GitHubIssueClient
 from scrapy.crawler import CrawlerProcess
 from sqlalchemy.exc import OperationalError
 
@@ -73,7 +78,7 @@ class SlackHelper:
             client.post_message(message)
 
 
-class GitHubHelper:
+class GitHubIssueHelper:
 
     def __init__(self):
         self.issues = []
@@ -87,9 +92,32 @@ class GitHubHelper:
     def raise_issues(self):
         owner = 'DemocracyClub'
         repo = 'EveryElection'
-        client = GitHubClient(GITHUB_API_KEY)
+        client = GitHubIssueClient(GITHUB_API_KEY)
         for issue in self.issues:
             client.raise_issue(owner, repo, issue['title'], issue['body'])
+
+
+class GitHubSyncHelper:
+
+    def get_github_credentials(self):
+        return GitHubCredentials(
+            repo=os.environ['MORPH_GITHUB_BOUNDARY_REPO'],
+            branch='master',
+            name=os.environ['MORPH_GITHUB_USERNAME'],
+            email=os.environ['MORPH_GITHUB_EMAIL'],
+            api_key=os.environ['MORPH_GITHUB_API_KEY']
+        )
+
+    def sync_file_to_github(self, file_name, content):
+        try:
+            creds = self.get_github_credentials()
+            g = GutHubSyncClient(creds)
+            g.push_file(content, file_name, 'Update %s at %s' %\
+                (file_name, str(datetime.datetime.now())))
+        except KeyError:
+            # if no credentials are defined in env vars
+            # just ignore this step
+            pass
 
 
 class ScraperException(Exception):
@@ -210,7 +238,7 @@ class LgbceScraper:
             );""" % self.TABLE_NAME)
         self.data = {}
         self.slack_helper = SlackHelper()
-        self.github_helper = GitHubHelper()
+        self.github_helper = GitHubIssueHelper()
 
     def scrape_index(self):
         return scraperwiki.scrape(BASE_URL)
@@ -362,6 +390,18 @@ class LgbceScraper:
             [slug for slug in self.data]
         )
 
+    def dump_table_to_json(self):
+        records = scraperwiki.sqlite.select(
+            " * FROM %s ORDER BY slug;" % (self.TABLE_NAME))
+        return json.dumps(
+            [OrderedDict(sorted(rec.items())) for rec in records],
+            sort_keys=True, indent=4)
+
+    def sync_db_to_github(self):
+        content = self.dump_table_to_json()
+        g = GitHubSyncHelper()
+        g.sync_file_to_github('lgbce.json', content)
+
     def scrape(self):
         self.parse_index(self.scrape_index())
         self.attach_spider_data()
@@ -370,6 +410,7 @@ class LgbceScraper:
         self.save()
         self.send_notifications()
         self.cleanup()
+        self.sync_db_to_github()
 
 
 if __name__ == '__main__':
