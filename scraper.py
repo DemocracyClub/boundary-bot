@@ -266,6 +266,11 @@ class LgbceScraper:
                 raise ScraperException(
                     "Failed to populate 'latest_event' field:\n%s" % (str(record)))
 
+            if record['status'] == self.COMPLETED_LABEL and record['eco_made'] == 0:
+                # everything in 'Recently Completed' should be a made ECO
+                raise ScraperException(
+                    "Found 'completed' record which is not a made ECO:\n%s" % (str(record)))
+
             if self.BOOTSTRAP_MODE:
                 # skip the next checks if we are initializing an empty DB
                 return True
@@ -286,6 +291,12 @@ class LgbceScraper:
                 raise ScraperException(
                     "Record status has changed from '%s' to '%s':\n%s" %\
                     (self.COMPLETED_LABEL, self.CURRENT_LABEL, str(record))
+                )
+
+            if len(result) == 1 and record['eco_made'] == 0 and result[0]['eco_made'] == 1:
+                # reviews shouldn't move backwards from made to not made
+                raise ScraperException(
+                    "'eco_made' field has changed from 1 to 0:\n%s" % (str(record))
                 )
 
             if len(result) > 1:
