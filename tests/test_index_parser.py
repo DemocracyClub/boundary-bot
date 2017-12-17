@@ -12,7 +12,7 @@ class IndexParserTests(unittest.TestCase):
 
     def test_parse_valid(self):
         scraper = LgbceScraper()
-        fixture = self.get_fixture('fixtures/valid.html')
+        fixture = self.get_fixture('fixtures/index/valid.html')
         scraper.parse_index(fixture)
         self.assertEqual(4, len(scraper.data))
         self.assertDictEqual(base_data['babergh'], scraper.data['babergh'])
@@ -22,12 +22,12 @@ class IndexParserTests(unittest.TestCase):
 
     def test_parse_unexpected_heading(self):
         scraper = LgbceScraper()
-        fixture = self.get_fixture('fixtures/unexpected_heading.html')
+        fixture = self.get_fixture('fixtures/index/unexpected_heading.html')
         with self.assertRaises(ScraperException):
             scraper.parse_index(fixture)
 
     def test_parse_missing_heading(self):
         scraper = LgbceScraper()
-        fixture = self.get_fixture('fixtures/missing_heading.html')
+        fixture = self.get_fixture('fixtures/index/missing_heading.html')
         with self.assertRaises(ScraperException):
             scraper.parse_index(fixture)
