@@ -11,7 +11,6 @@ from commitment import GitHubClient as GutHubSyncClient
 from polling_bot.brain import SlackClient
 from polling_bot.brain import GitHubClient as GitHubIssueClient
 from scrapy.crawler import CrawlerProcess
-from sqlalchemy.exc import OperationalError
 
 # hack to override sqlite database filename
 # see: https://help.morph.io/t/using-python-3-with-morph-scraperwiki-fork/148
