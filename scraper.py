@@ -131,6 +131,9 @@ class LgbceSpider(scrapy.Spider):
         'COOKIES_ENABLED': False,
         'USER_AGENT': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:56.0) Gecko/20100101 Firefox/56.0',
         'FEED_FORMAT': 'json',
+        'DEFAULT_REQUEST_HEADERS': {
+            'Cache-Control': 'max-age=20000'
+        }
     }
     allowed_domains = ["lgbce.org.uk"]
     start_urls = [BASE_URL]
