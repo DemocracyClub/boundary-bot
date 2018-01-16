@@ -162,6 +162,9 @@ class LgbceSpider(scrapy.Spider):
             zipfiles = response.xpath("/html/body//a[contains(@href,'.zip')]/@href").extract()
             # if we found exactly one, assume that's what we're looking for
             # the files we're looking for are not very consistently named :(
+
+            # de-dupe the list, we don't care about order
+            zipfiles = list(set(zipfiles))
             if len(zipfiles) == 1:
                 rec['shapefiles'] = zipfiles[0]
 
