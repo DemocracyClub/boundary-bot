@@ -297,11 +297,6 @@ class LgbceScraper:
         # and raise an error if unexpected things have happened
         for key, record in self.data.items():
 
-            if record['latest_event'] is None:
-                # we've failed to scrape the latest review event
-                raise ScraperException(
-                    "Failed to populate 'latest_event' field:\n%s" % (str(record)))
-
             if record['status'] == self.COMPLETED_LABEL and record['eco_made'] == 0:
                 # everything in 'Recently Completed' should be a made ECO
                 raise ScraperException(
@@ -322,6 +317,11 @@ class LgbceScraper:
                     (self.COMPLETED_LABEL, str(record))
                 )
 
+            if len(result) == 1 and record['latest_event'] is None and result[0]['latest_event'] != '':
+                # the review isn't brand new and we've failed to scrape the latest review event
+                raise ScraperException(
+                    "Failed to populate 'latest_event' field:\n%s" % (str(record)))
+
             if len(result) == 1 and record['status'] == self.CURRENT_LABEL and result[0]['status'] == self.COMPLETED_LABEL:
                 # reviews shouldn't move backwards from completed to current
                 raise ScraperException(
@@ -340,6 +340,11 @@ class LgbceScraper:
                 raise ScraperException(
                     'Human sacrifice, dogs and cats living together, mass hysteria!')
         return True
+
+    def pre_process(self):
+        for key, record in self.data.items():
+            if record['latest_event'] is None:
+                record['latest_event'] = ''
 
     def make_notifications(self):
         for key, record in self.data.items():
@@ -411,6 +416,7 @@ class LgbceScraper:
         self.parse_index(self.scrape_index())
         self.attach_spider_data()
         self.validate()
+        self.pre_process()
         self.make_notifications()
         self.save()
         self.send_notifications()

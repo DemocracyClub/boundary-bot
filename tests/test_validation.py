@@ -19,11 +19,15 @@ class ValidationTests(unittest.TestCase):
         self.assertTrue(scraper.validate())
 
     def test_null_event(self):
-        # latest_event = None
+        # latest_event = None and we already have a non-empty latest_event in the DB
         scraper = LgbceScraper()
         scraper.data = {
             'babergh': base_data['babergh'].copy(),
         }
+        scraper.data['babergh']['latest_event'] = 'foo'
+        scraper.save()
+        scraper.data['babergh']['latest_event'] = None
+
         scraper.BOOTSTRAP_MODE = False
         with self.assertRaises(ScraperException) as e:
             scraper.validate()
