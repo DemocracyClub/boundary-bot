@@ -3,6 +3,7 @@ import json
 import lxml.html
 import os
 import pprint
+import requests
 import scrapy
 import tempfile
 from collections import OrderedDict
@@ -30,6 +31,7 @@ BOOTSTRAP_MODE = False
 SEND_NOTIFICATIONS = not(BOOTSTRAP_MODE)
 
 BASE_URL = "http://www.lgbce.org.uk/current-reviews"
+REQUEST_HEADERS = {'Cache-Control': 'max-age=20000'}
 
 
 try:
@@ -131,9 +133,7 @@ class LgbceSpider(scrapy.Spider):
         'COOKIES_ENABLED': False,
         'USER_AGENT': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:56.0) Gecko/20100101 Firefox/56.0',
         'FEED_FORMAT': 'json',
-        'DEFAULT_REQUEST_HEADERS': {
-            'Cache-Control': 'max-age=20000'
-        }
+        'DEFAULT_REQUEST_HEADERS': REQUEST_HEADERS
     }
     allowed_domains = ["lgbce.org.uk"]
     start_urls = [BASE_URL]
@@ -246,7 +246,9 @@ class LgbceScraper:
         self.github_helper = GitHubIssueHelper()
 
     def scrape_index(self):
-        return scraperwiki.scrape(BASE_URL)
+        headers = REQUEST_HEADERS
+        r = requests.get(BASE_URL, headers=headers)
+        return r.text
 
     def parse_index(self, html):
         expected_headings = [self.CURRENT_LABEL, self.COMPLETED_LABEL]
