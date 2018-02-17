@@ -103,7 +103,6 @@ class GitHubSyncHelper:
     def get_github_credentials(self):
         return GitHubCredentials(
             repo=os.environ['MORPH_GITHUB_BOUNDARY_REPO'],
-            branch='master',
             name=os.environ['MORPH_GITHUB_USERNAME'],
             email=os.environ['MORPH_GITHUB_EMAIL'],
             api_key=os.environ['MORPH_GITHUB_API_KEY']

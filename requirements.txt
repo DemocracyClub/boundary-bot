@@ -1,4 +1,4 @@
-commitment==1.0.0
+commitment==2.0.0
 cssselect==0.9.1
 lxml==3.6.4
 requests==2.13.0
