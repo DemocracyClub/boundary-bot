@@ -8,7 +8,7 @@ import scrapy
 import tempfile
 from collections import OrderedDict
 from commitment import GitHubCredentials
-from commitment import GitHubClient as GutHubSyncClient
+from commitment import GitHubClient as GitHubSyncClient
 from polling_bot.brain import SlackClient
 from polling_bot.brain import GitHubClient as GitHubIssueClient
 from scrapy.crawler import CrawlerProcess
@@ -112,7 +112,7 @@ class GitHubSyncHelper:
     def sync_file_to_github(self, file_name, content):
         try:
             creds = self.get_github_credentials()
-            g = GutHubSyncClient(creds)
+            g = GitHubSyncClient(creds)
             g.push_file(content, file_name, 'Update %s at %s' %\
                 (file_name, str(datetime.datetime.now())))
         except KeyError:
