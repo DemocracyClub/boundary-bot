@@ -1,7 +1,7 @@
 import os
 import unittest
 from scrapy.http import TextResponse, Request
-from scraper import LgbceSpider
+from boundary_bot.spider import LgbceSpider
 
 
 def mock_response(file_name, url):

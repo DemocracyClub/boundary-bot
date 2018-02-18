@@ -1,6 +1,6 @@
 import os
 import unittest
-from scraper import LgbceScraper, ScraperException
+from boundary_bot.scraper import LgbceScraper, ScraperException
 from data_provider import base_data
 
 class IndexParserTests(unittest.TestCase):
@@ -11,7 +11,7 @@ class IndexParserTests(unittest.TestCase):
         return open(fixture_path).read()
 
     def test_parse_valid(self):
-        scraper = LgbceScraper()
+        scraper = LgbceScraper(False, False)
         fixture = self.get_fixture('fixtures/index/valid.html')
         scraper.parse_index(fixture)
         self.assertEqual(4, len(scraper.data))
@@ -21,13 +21,13 @@ class IndexParserTests(unittest.TestCase):
         self.assertDictEqual(base_data['ashford'], scraper.data['ashford'])
 
     def test_parse_unexpected_heading(self):
-        scraper = LgbceScraper()
+        scraper = LgbceScraper(False, False)
         fixture = self.get_fixture('fixtures/index/unexpected_heading.html')
         with self.assertRaises(ScraperException):
             scraper.parse_index(fixture)
 
     def test_parse_missing_heading(self):
-        scraper = LgbceScraper()
+        scraper = LgbceScraper(False, False)
         fixture = self.get_fixture('fixtures/index/missing_heading.html')
         with self.assertRaises(ScraperException):
             scraper.parse_index(fixture)

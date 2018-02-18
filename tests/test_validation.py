@@ -1,6 +1,6 @@
 import unittest
 import scraperwiki
-from scraper import LgbceScraper, ScraperException
+from boundary_bot.scraper import LgbceScraper, ScraperException
 from data_provider import base_data
 
 
@@ -10,7 +10,7 @@ class ValidationTests(unittest.TestCase):
         scraperwiki.sqlite.execute("DROP TABLE IF EXISTS lgbce_reviews;")
 
     def test_valid(self):
-        scraper = LgbceScraper()
+        scraper = LgbceScraper(False, False)
         scraper.data = {
             'babergh': base_data['babergh'].copy(),
         }
@@ -20,7 +20,7 @@ class ValidationTests(unittest.TestCase):
 
     def test_null_event(self):
         # latest_event = None and we already have a non-empty latest_event in the DB
-        scraper = LgbceScraper()
+        scraper = LgbceScraper(False, False)
         scraper.data = {
             'babergh': base_data['babergh'].copy(),
         }
@@ -35,7 +35,7 @@ class ValidationTests(unittest.TestCase):
 
     def test_completed_not_made(self):
         # status = 'Recently Completed' and ECO not made
-        scraper = LgbceScraper()
+        scraper = LgbceScraper(False, False)
         scraper.data = {
             'allerdale': base_data['allerdale'].copy(),
         }
@@ -49,7 +49,7 @@ class ValidationTests(unittest.TestCase):
 
     def test_new_completed(self):
         # status = 'Recently Completed' and record not in DB
-        scraper = LgbceScraper()
+        scraper = LgbceScraper(False, False)
         scraper.data = {
             'allerdale': base_data['allerdale'].copy(),
         }
@@ -67,7 +67,7 @@ class ValidationTests(unittest.TestCase):
 
     def test_backwards_status_move(self):
         # old status is 'Recently Completed', new status is 'Current Reviews'
-        scraper = LgbceScraper()
+        scraper = LgbceScraper(False, False)
         scraper.data = {
             'allerdale': base_data['allerdale'].copy(),
         }
@@ -87,7 +87,7 @@ class ValidationTests(unittest.TestCase):
 
     def test_backwards_made_eco_move(self):
         # old eco_made value is 1, new value is 0
-        scraper = LgbceScraper()
+        scraper = LgbceScraper(False, False)
         scraper.data = {
             'allerdale': base_data['allerdale'].copy(),
         }

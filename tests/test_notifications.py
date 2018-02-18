@@ -1,6 +1,6 @@
 import unittest
 import scraperwiki
-from scraper import LgbceScraper, ScraperException
+from boundary_bot.scraper import LgbceScraper, ScraperException
 from data_provider import base_data
 
 
@@ -10,7 +10,7 @@ class NotificationTests(unittest.TestCase):
         scraperwiki.sqlite.execute("DROP TABLE IF EXISTS lgbce_reviews;")
 
     def test_no_events(self):
-        scraper = LgbceScraper()
+        scraper = LgbceScraper(False, False)
         scraper.data = {
             'babergh': base_data['babergh'].copy(),
         }
@@ -21,7 +21,7 @@ class NotificationTests(unittest.TestCase):
         self.assertEqual(0, len(scraper.github_helper.issues))
 
     def test_new_record(self):
-        scraper = LgbceScraper()
+        scraper = LgbceScraper(False, False)
         scraper.data = {
             'babergh': base_data['babergh'].copy(),
         }
@@ -32,7 +32,7 @@ class NotificationTests(unittest.TestCase):
         self.assertEqual(0, len(scraper.github_helper.issues))
 
     def test_new_event(self):
-        scraper = LgbceScraper()
+        scraper = LgbceScraper(False, False)
         scraper.data = {
             'babergh': base_data['babergh'].copy(),
         }
@@ -45,7 +45,7 @@ class NotificationTests(unittest.TestCase):
         self.assertEqual(0, len(scraper.github_helper.issues))
 
     def test_eco_made(self):
-        scraper = LgbceScraper()
+        scraper = LgbceScraper(False, False)
         scraper.data = {
             'allerdale': base_data['allerdale'].copy(),
         }

@@ -1,6 +1,6 @@
 import unittest
 from unittest import mock
-from scraper import LgbceScraper, ScraperException
+from boundary_bot.scraper import LgbceScraper, ScraperException
 from data_provider import base_data
 
 
@@ -23,9 +23,9 @@ def mock_run_spider(obj):
 
 class AttachSpiderTests(unittest.TestCase):
 
-    @mock.patch("scraper.SpiderWrapper.run_spider", mock_run_spider)
+    @mock.patch("boundary_bot.scraper.SpiderWrapper.run_spider", mock_run_spider)
     def test_valid(self):
-        scraper = LgbceScraper()
+        scraper = LgbceScraper(False, False)
         scraper.data = {
             'babergh': base_data['babergh'].copy(),
             'basingstoke-and-deane': base_data['basingstoke-and-deane'].copy(),
@@ -47,9 +47,9 @@ class AttachSpiderTests(unittest.TestCase):
         self.assertIsNone(scraper.data['basingstoke-and-deane']['shapefiles'])
         self.assertEqual(0, scraper.data['basingstoke-and-deane']['eco_made'])
 
-    @mock.patch("scraper.SpiderWrapper.run_spider", mock_run_spider)
+    @mock.patch("boundary_bot.scraper.SpiderWrapper.run_spider", mock_run_spider)
     def test_unexpected(self):
-        scraper = LgbceScraper()
+        scraper = LgbceScraper(False, False)
         scraper.data = {
             'babergh': base_data['babergh'].copy(),
         }
