@@ -218,9 +218,10 @@ class LgbceScraper:
             sort_keys=True, indent=4)
 
     def sync_db_to_github(self):
-        content = self.dump_table_to_json()
-        g = GitHubSyncHelper()
-        g.sync_file_to_github('lgbce.json', content)
+        if GITHUB_API_KEY:
+            content = self.dump_table_to_json()
+            g = GitHubSyncHelper()
+            g.sync_file_to_github('lgbce.json', content)
 
     def scrape(self):
         self.parse_index(self.scrape_index())
