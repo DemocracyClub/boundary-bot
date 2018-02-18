@@ -3,6 +3,7 @@ import unittest
 from boundary_bot.scraper import LgbceScraper, ScraperException
 from data_provider import base_data
 
+
 class IndexParserTests(unittest.TestCase):
 
     def get_fixture(self, fixture):
