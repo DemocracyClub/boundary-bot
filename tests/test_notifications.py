@@ -1,6 +1,6 @@
 import unittest
 import scraperwiki
-from boundary_bot.scraper import LgbceScraper, ScraperException
+from boundary_bot.scraper import LgbceScraper
 from data_provider import base_data
 
 
