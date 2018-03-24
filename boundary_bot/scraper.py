@@ -6,6 +6,7 @@ import scraperwiki
 from collections import OrderedDict
 from boundary_bot.common import (
     BASE_URL,
+    START_PAGE,
     REQUEST_HEADERS,
     SLACK_WEBHOOK_URL,
     GITHUB_API_KEY,
@@ -33,7 +34,7 @@ class LgbceScraper:
     """
 
     CURRENT_LABEL = 'Current Reviews'
-    COMPLETED_LABEL = 'Recently Completed'
+    COMPLETED_LABEL = 'Recent Reviews'
     TABLE_NAME = 'lgbce_reviews'
 
     def __init__(self, BOOTSTRAP_MODE, SEND_NOTIFICATIONS):
@@ -55,28 +56,31 @@ class LgbceScraper:
 
     def scrape_index(self):
         headers = REQUEST_HEADERS
-        r = requests.get(BASE_URL, headers=headers)
+        r = requests.get(START_PAGE, headers=headers)
         return r.text
 
     def parse_index(self, html):
         expected_headings = [self.CURRENT_LABEL, self.COMPLETED_LABEL]
         root = lxml.html.fromstring(html)
 
-        h2_tags = root.cssselect('h2')
+        headings = root.cssselect('div.field--label')
 
-        found_headings = [h2.text for h2 in h2_tags]
+        found_headings = [heading.text for heading in headings]
         if expected_headings != found_headings:
             raise ScraperException(
                 "Unexpected headings: Found %s, expected %s" %\
                 (str(found_headings), str(expected_headings))
             )
 
-        for h2 in h2_tags:
-            text = str(h2.text)
+        for heading in headings:
+            text = str(heading.text)
+            ul = heading.getnext().find('.//ul')
             # iterate over boundary reviews:
-            for ul in h2.getnext().iterchildren():
-                link = ul.findall('a')[0]
+            for li in ul:
+                link = li.find('.//a')
                 url = link.get('href')
+                if not url.startswith('http'):
+                    url = BASE_URL + url
                 slug = url.split('/')[-1]
                 self.data[slug] = {
                     'slug': slug,

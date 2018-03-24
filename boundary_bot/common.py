@@ -1,7 +1,8 @@
 import os
 
 
-BASE_URL = "http://www.lgbce.org.uk/current-reviews"
+BASE_URL = "http://www.lgbce.org.uk"
+START_PAGE = BASE_URL + "/current-reviews"
 REQUEST_HEADERS = {'Cache-Control': 'max-age=20000'}
 
 try:

@@ -3,7 +3,7 @@ import os
 import scrapy
 import tempfile
 from scrapy.crawler import CrawlerProcess
-from boundary_bot.common import is_eco, BASE_URL, REQUEST_HEADERS
+from boundary_bot.common import is_eco, START_PAGE, REQUEST_HEADERS
 
 
 class LgbceSpider(scrapy.Spider):
@@ -17,24 +17,15 @@ class LgbceSpider(scrapy.Spider):
         'DEFAULT_REQUEST_HEADERS': REQUEST_HEADERS
     }
     allowed_domains = ["lgbce.org.uk"]
-    start_urls = [BASE_URL]
+    start_urls = [START_PAGE]
 
     def parse(self, response):
-
-        # the class we're looking for will be called 'tab-1'
-        # ...except when it is called something else
-        potential_selectors = ['div.tab-1', 'div.-tab-1', 'div.tab-2']
-        selector = potential_selectors[0]
-        for s in potential_selectors:
-            if len(response.css(s)) > 0:
-                selector = s
-                break
-
-        desc = response.css("%s::attr(desc)" % (selector)).extract()
-        if len(desc) == 1:
+        tabs = response.css('div.field--name-field-accordion-title')
+        if tabs:
+            title = tabs[0].xpath('text()').extract_first().strip()
             rec = {
                 'slug': response.url.split('/')[-1],
-                'latest_event': desc[0].strip(),
+                'latest_event': title,
                 'shapefiles': None,
                 'eco_made': 0,
             }
@@ -52,15 +43,15 @@ class LgbceSpider(scrapy.Spider):
             # try to work out if the ECO is 'made'
             eco_made_text = "have now successfully completed a 40 day period "
             "of parliamentary scrutiny and will come into force"
-            div = response.css(selector).extract()
+            div = response.css('div.field--name-field-accordion-body').extract_first()
 
-            if is_eco(desc[0]) and eco_made_text in div[0].lower():
+            if is_eco(title) and eco_made_text in div.lower():
                 rec['eco_made'] = 1
 
             yield rec
 
-        for next_page in response.css('ul > li > a'):
-            if 'current-reviews' in next_page.extract():
+        for next_page in response.css('ul > li > div > span > a'):
+            if 'all-reviews' in next_page.extract():
                 yield response.follow(next_page, self.parse)
 
 
