@@ -39,9 +39,15 @@ class DetailParserTest(unittest.TestCase):
         result = list(spider.parse(fixture))
         self.assertEqual(1, len(result))
         self.assertEqual('tewkesbury', result[0]['slug'])
-        self.assertEqual('The Tewkesbury (Electoral Changes) Order 2018 (Draft)', result[0]['latest_event'])
+        self.assertEqual(
+            'The Tewkesbury (Electoral Changes) Order 2018 (Draft)',
+            result[0]['latest_event']
+        )
         self.assertEqual(0, result[0]['eco_made'])
-        self.assertEqual('http://www.lgbce.org.uk/__data/assets/file/0005/35906/Tewkesbury_final_proposals.zip', result[0]['shapefiles'])
+        self.assertEqual(
+            'http://s3-eu-west-2.amazonaws.com/lgbce/__data/assets/file/0005/35906/Tewkesbury_final_proposals.zip',
+            result[0]['shapefiles']
+        )
 
     def test_made_eco(self):
         spider = LgbceSpider()
