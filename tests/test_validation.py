@@ -48,7 +48,7 @@ class ValidationTests(unittest.TestCase):
         assert "Found 'completed' record which is not a made ECO" in str(e.exception)
 
     def test_new_completed(self):
-        # status = 'Recently Completed' and record not in DB
+        # status = 'Recent Reviews' and record not in DB
         scraper = LgbceScraper(False, False)
         scraper.data = {
             'allerdale': base_data['allerdale'].copy(),
@@ -59,14 +59,14 @@ class ValidationTests(unittest.TestCase):
         scraper.BOOTSTRAP_MODE = False
         with self.assertRaises(ScraperException) as e:
             scraper.validate()
-        assert "New record found but status is 'Recently Completed'" in str(e.exception)
+        assert "New record found but status is 'Recent Reviews'" in str(e.exception)
 
         # this check should be skipped in bootstrap mode
         scraper.BOOTSTRAP_MODE = True
         self.assertTrue(scraper.validate())
 
     def test_backwards_status_move(self):
-        # old status is 'Recently Completed', new status is 'Current Reviews'
+        # old status is 'Recent Reviews', new status is 'Current Reviews'
         scraper = LgbceScraper(False, False)
         scraper.data = {
             'allerdale': base_data['allerdale'].copy(),
@@ -79,7 +79,7 @@ class ValidationTests(unittest.TestCase):
         scraper.BOOTSTRAP_MODE = False
         with self.assertRaises(ScraperException) as e:
             scraper.validate()
-        assert "Record status has changed from 'Recently Completed' to 'Current Reviews'" in str(e.exception)
+        assert "Record status has changed from 'Recent Reviews' to 'Current Reviews'" in str(e.exception)
 
         # this check should be skipped in bootstrap mode
         scraper.BOOTSTRAP_MODE = True
