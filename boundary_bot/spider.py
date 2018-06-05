@@ -19,6 +19,28 @@ class LgbceSpider(scrapy.Spider):
     allowed_domains = ["lgbce.org.uk"]
     start_urls = [START_PAGE]
 
+    def get_shapefiles(self, response):
+        # find any links to zip files in the page
+        zipfiles = response.xpath("/html/body//a[contains(@href,'.zip')]/@href").extract()
+
+        zipfiles = list(set(zipfiles))
+        if len(zipfiles) == 1:
+            # if we found exactly one link to a zipfile,
+            # assume that's what we're looking for
+            return zipfiles[0]
+        return None
+
+    def get_legislation(self, response):
+        # find any links to legislation.gov.uk in the page
+        legislation_links = response.xpath("/html/body//a[contains(@href,'legislation.gov.uk')]/@href").extract()
+
+        legislation_links = [x for x in list(set(legislation_links)) if x.endswith('/made')]
+        if len(legislation_links) == 1:
+            # if we found exactly link to a made order,
+            # assume that's what we're looking for
+            return legislation_links[0]
+        return None
+
     def parse(self, response):
         tabs = response.css('div.field--name-field-accordion-title')
         if tabs:
@@ -27,18 +49,11 @@ class LgbceSpider(scrapy.Spider):
                 'slug': response.url.split('/')[-1],
                 'latest_event': title,
                 'shapefiles': None,
+                'eco': None,
                 'eco_made': 0,
             }
 
-            # find any links to zip files in the page
-            zipfiles = response.xpath("/html/body//a[contains(@href,'.zip')]/@href").extract()
-            # if we found exactly one, assume that's what we're looking for
-            # the files we're looking for are not very consistently named :(
-
-            # de-dupe the list, we don't care about order
-            zipfiles = list(set(zipfiles))
-            if len(zipfiles) == 1:
-                rec['shapefiles'] = zipfiles[0]
+            rec['shapefiles'] = self.get_shapefiles(response)
 
             # try to work out if the ECO is 'made'
             eco_made_text = "have now successfully completed a 40 day period "
@@ -47,6 +62,7 @@ class LgbceSpider(scrapy.Spider):
 
             if is_eco(title) and eco_made_text in div.lower():
                 rec['eco_made'] = 1
+                rec['eco'] = self.get_legislation(response)
 
             yield rec
 

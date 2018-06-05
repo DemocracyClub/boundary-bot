@@ -10,12 +10,14 @@ def mock_run_spider(obj):
             "slug": "basingstoke-and-deane",
             "latest_event": "Consultation on warding arrangements",
             "shapefiles": None,
+            "eco": None,
             "eco_made": 0,
         },
         {
             "slug": "babergh",
             "latest_event": "The Babergh (Electoral Changes) Order 2017",
             "shapefiles": "http://www.lgbce.org.uk/__data/assets/file/derpderp.zip",
+            "eco": "http://legislation.gov.uk/foo/bar/derpderp/made",
             "eco_made": 1,
         }
     ]
@@ -38,6 +40,10 @@ class AttachSpiderTests(unittest.TestCase):
         self.assertEqual(
             "http://www.lgbce.org.uk/__data/assets/file/derpderp.zip",
             scraper.data['babergh']['shapefiles']
+        )
+        self.assertEqual(
+            "http://legislation.gov.uk/foo/bar/derpderp/made",
+            scraper.data['babergh']['eco']
         )
         self.assertEqual(1, scraper.data['babergh']['eco_made'])
         self.assertEqual(

@@ -27,6 +27,7 @@ class DetailParserTest(unittest.TestCase):
         self.assertEqual(1, len(result))
         self.assertEqual('babergh', result[0]['slug'])
         self.assertEqual('Consultation on draft recommendations', result[0]['latest_event'])
+        self.assertIsNone(result[0]['eco'])
         self.assertEqual(0, result[0]['eco_made'])
         self.assertIsNone(result[0]['shapefiles'])
 
@@ -43,6 +44,7 @@ class DetailParserTest(unittest.TestCase):
             'The Tewkesbury (Electoral Changes) Order 2018 (Draft)',
             result[0]['latest_event']
         )
+        self.assertIsNone(result[0]['eco'])
         self.assertEqual(0, result[0]['eco_made'])
         self.assertEqual(
             'http://s3-eu-west-2.amazonaws.com/lgbce/__data/assets/file/0005/35906/Tewkesbury_final_proposals.zip',
@@ -59,6 +61,10 @@ class DetailParserTest(unittest.TestCase):
         self.assertEqual(1, len(result))
         self.assertEqual('leeds', result[0]['slug'])
         self.assertEqual('The Leeds (Electoral Changes) Order 2017', result[0]['latest_event'])
+        self.assertEqual(
+            'http://www.legislation.gov.uk/uksi/2017/1077/contents/made',
+            result[0]['eco']
+        )
         self.assertEqual(1, result[0]['eco_made'])
         self.assertIsNone(result[0]['shapefiles'])
 

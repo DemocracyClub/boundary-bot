@@ -46,6 +46,7 @@ class LgbceScraper:
                 status TEXT,
                 latest_event TEXT,
                 shapefiles TEXT,
+                eco TEXT,
                 eco_made INT DEFAULT 0
             );""" % self.TABLE_NAME)
         self.data = {}
@@ -89,6 +90,7 @@ class LgbceScraper:
                     'status': text,
                     'latest_event': None,
                     'shapefiles': None,
+                    'eco': None,
                     'eco_made': 0,
                 }
 
@@ -104,6 +106,7 @@ class LgbceScraper:
                 )
             self.data[area['slug']]['latest_event'] = area['latest_event']
             self.data[area['slug']]['shapefiles'] = area['shapefiles']
+            self.data[area['slug']]['eco'] = area['eco']
             self.data[area['slug']]['eco_made'] = area['eco_made']
 
     def validate(self):
