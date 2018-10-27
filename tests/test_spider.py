@@ -1,5 +1,4 @@
-import unittest
-from unittest import mock
+from unittest import mock, TestCase
 from boundary_bot.scraper import LgbceScraper, ScraperException
 from data_provider import base_data
 
@@ -23,7 +22,8 @@ def mock_run_spider(obj):
     ]
 
 
-class AttachSpiderTests(unittest.TestCase):
+@mock.patch("boundary_bot.code_matcher.CodeMatcher.get_data", lambda x: [])
+class AttachSpiderTests(TestCase):
 
     @mock.patch("boundary_bot.scraper.SpiderWrapper.run_spider", mock_run_spider)
     def test_valid(self):

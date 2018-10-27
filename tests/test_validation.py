@@ -1,10 +1,11 @@
-import unittest
 import scraperwiki
+from unittest import mock, TestCase
 from boundary_bot.scraper import LgbceScraper, ScraperException
 from data_provider import base_data
 
 
-class ValidationTests(unittest.TestCase):
+@mock.patch("boundary_bot.code_matcher.CodeMatcher.get_data", lambda x: [])
+class ValidationTests(TestCase):
 
     def setUp(self):
         scraperwiki.sqlite.execute("DROP TABLE IF EXISTS lgbce_reviews;")

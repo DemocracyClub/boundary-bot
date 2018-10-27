@@ -1,10 +1,10 @@
 import os
-import unittest
+from unittest import mock, TestCase
 from boundary_bot.scraper import LgbceScraper, ScraperException
 from data_provider import base_data
 
-
-class IndexParserTests(unittest.TestCase):
+@mock.patch("boundary_bot.code_matcher.CodeMatcher.get_data", lambda x: [])
+class IndexParserTests(TestCase):
 
     def get_fixture(self, fixture):
         dirname = os.path.dirname(os.path.abspath(__file__))
