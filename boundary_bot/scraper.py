@@ -4,6 +4,7 @@ import pprint
 import requests
 import scraperwiki
 from collections import OrderedDict
+from boundary_bot.code_matcher import CodeMatcher
 from boundary_bot.common import (
     BASE_URL,
     START_PAGE,
@@ -42,6 +43,7 @@ class LgbceScraper:
             CREATE TABLE IF NOT EXISTS %s (
                 slug TEXT PRIMARY KEY,
                 name TEXT,
+                register_code TEXT,
                 url TEXT,
                 status TEXT,
                 latest_event TEXT,
@@ -50,6 +52,7 @@ class LgbceScraper:
                 eco_made INT DEFAULT 0
             );""" % self.TABLE_NAME)
         self.data = {}
+        self.code_matcher = CodeMatcher()
         self.slack_helper = SlackHelper()
         self.github_helper = GitHubIssueHelper()
         self.BOOTSTRAP_MODE = BOOTSTRAP_MODE
@@ -86,6 +89,7 @@ class LgbceScraper:
                 self.data[slug] = {
                     'slug': slug,
                     'name': link.text,
+                    'register_code': None,
                     'url': url,
                     'status': text,
                     'latest_event': None,
@@ -108,6 +112,11 @@ class LgbceScraper:
             self.data[area['slug']]['shapefiles'] = area['shapefiles']
             self.data[area['slug']]['eco'] = area['eco']
             self.data[area['slug']]['eco_made'] = area['eco_made']
+
+    def attach_register_codes(self):
+        for key, record in self.data.items():
+            code, *_ = self.code_matcher.get_register_code(record['name'])
+            record['register_code'] = code
 
     def validate(self):
         # perform some consistency checks
@@ -233,6 +242,7 @@ class LgbceScraper:
     def scrape(self):
         self.parse_index(self.scrape_index())
         self.attach_spider_data()
+        self.attach_register_codes()
         self.validate()
         self.pre_process()
         self.make_notifications()
