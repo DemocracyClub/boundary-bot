@@ -8,7 +8,7 @@ If we are starting with an empty database we want to
 - ensure we don't send any notifications and
 - disable some consistency checks
 """
-BOOTSTRAP_MODE = False
+BOOTSTRAP_MODE = True
 SEND_NOTIFICATIONS = not(BOOTSTRAP_MODE)
 
 
