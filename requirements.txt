@@ -1,8 +1,8 @@
-commitment==2.0.0
+commitment>=2,<3
 cssselect==0.9.1
 fuzzywuzzy==0.17.0
-lxml==3.6.4
-requests==2.13.0
+lxml>=4.2,<5
+requests>=2.20.0,<3
 scraperwiki==0.5.1
 scrapy==1.4.0
 git+https://github.com/polling-bot-4000/polling-bot.git
