@@ -60,7 +60,7 @@ class LgbceSpider(scrapy.Spider):
             "of parliamentary scrutiny and will come into force"
             div = response.css('div.field--name-field-accordion-body').extract_first()
 
-            if is_eco(title) and eco_made_text in div.lower():
+            if is_eco(title) and eco_made_text in div.lower().replace('\xa0', ' '):
                 rec['eco_made'] = 1
                 rec['eco'] = self.get_legislation(response)
 
