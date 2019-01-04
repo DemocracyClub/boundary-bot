@@ -8,6 +8,7 @@ class CodeMatcher:
 
     def __init__(self):
         councils = self.get_data()
+        councils = [c for c in councils if not c['end-date']]
 
         self.long_names = [c['official-name'] for c in councils]
         self.short_names = [c['name'] for c in councils]
