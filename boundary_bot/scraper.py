@@ -125,8 +125,21 @@ class LgbceScraper:
 
             if record['status'] == self.COMPLETED_LABEL and record['eco_made'] == 0:
                 # everything in 'Recently Completed' should be a made ECO
-                raise ScraperException(
-                    "Found 'completed' record which is not a made ECO:\n%s" % (str(record)))
+                # ..except for these exceptions 😠
+                exceptions = [
+                    'babergh',
+                    'carlisle',
+                    'copeland',
+                    'cornwall',
+                    'crawley',
+                    'mid-suffolk',
+                    'norwich',
+                    'rutland',
+                    'warwick',
+                ]
+                if record['slug'] not in exceptions:
+                    raise ScraperException(
+                        "Found 'completed' record which is not a made ECO:\n%s" % (str(record)))
 
             if self.BOOTSTRAP_MODE:
                 # skip the next checks if we are initializing an empty DB
