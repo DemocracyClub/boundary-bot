@@ -128,12 +128,9 @@ class LgbceScraper:
                 # ..except for these exceptions 😠
                 exceptions = [
                     'babergh',
-                    'carlisle',
                     'copeland',
                     'cornwall',
-                    'crawley',
                     'mid-suffolk',
-                    'norwich',
                     'rutland',
                     'warwick',
                 ]
