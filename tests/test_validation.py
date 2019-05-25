@@ -34,20 +34,6 @@ class ValidationTests(TestCase):
             scraper.validate()
         assert "Failed to populate 'latest_event' field" in str(e.exception)
 
-    def test_completed_not_made(self):
-        # status = 'Recently Completed' and ECO not made
-        scraper = LgbceScraper(False, False)
-        scraper.data = {
-            'allerdale': base_data['allerdale'].copy(),
-        }
-        scraper.data['allerdale']['latest_event'] = 'The Allerdale Electoral Change order'
-        scraper.data['allerdale']['eco_made'] = 0
-
-        scraper.BOOTSTRAP_MODE = False
-        with self.assertRaises(ScraperException) as e:
-            scraper.validate()
-        assert "Found 'completed' record which is not a made ECO" in str(e.exception)
-
     def test_new_completed(self):
         # status = 'Recent Reviews' and record not in DB
         scraper = LgbceScraper(False, False)

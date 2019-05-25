@@ -51,9 +51,9 @@ class NotificationTests(TestCase):
             'allerdale': base_data['allerdale'].copy(),
         }
         scraper.data['allerdale']['latest_event'] = 'The Allerdale Electoral Changes order'
-        scraper.data['allerdale']['eco_made'] = 0
+        scraper.data['allerdale']['status'] = 'Current Reviews'
         scraper.save()
-        scraper.data['allerdale']['eco_made'] = 1
+        scraper.data['allerdale']['status'] = 'Recent Reviews'
         scraper.make_notifications()
         self.assertEqual(1, len(scraper.slack_helper.messages))
         assert 'Completed boundary review' in scraper.slack_helper.messages[0]

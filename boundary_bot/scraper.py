@@ -123,23 +123,8 @@ class LgbceScraper:
         # and raise an error if unexpected things have happened
         for key, record in self.data.items():
 
-            if record['status'] == self.COMPLETED_LABEL and record['eco_made'] == 0:
-                # everything in 'Recently Completed' should be a made ECO
-                # ..except for these exceptions 😠
-                exceptions = [
-                    'babergh',
-                    'copeland',
-                    'cornwall',
-                    'mid-suffolk',
-                    'rutland',
-                    'warwick',
-                ]
-                if record['slug'] not in exceptions:
-                    raise ScraperException(
-                        "Found 'completed' record which is not a made ECO:\n%s" % (str(record)))
-
             if self.BOOTSTRAP_MODE:
-                # skip the next checks if we are initializing an empty DB
+                # skip all the checks if we are initializing an empty DB
                 return True
 
             result = scraperwiki.sql.select(
@@ -193,9 +178,8 @@ class LgbceScraper:
 
             if len(result) == 1:
                 # we've already got our eye on this one
-                if is_eco(record['latest_event']) and\
-                        result[0]['eco_made'] == 0 and\
-                        record['eco_made'] == 1:
+                if record['status'] == self.COMPLETED_LABEL and\
+                        result[0]['status'] != self.COMPLETED_LABEL:
                     self.slack_helper.append_completed_review_message(record)
                     self.github_helper.append_completed_review_issue(record)
                 if result[0]['latest_event'] != record['latest_event']:
