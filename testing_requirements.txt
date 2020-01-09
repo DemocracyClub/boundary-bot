@@ -1,2 +1,1 @@
-coverage
-python-coveralls
+coveralls>=1.10.0
