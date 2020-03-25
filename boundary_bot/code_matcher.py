@@ -1,6 +1,6 @@
 import csv
 import requests
-from fuzzywuzzy import process
+from rapidfuzz import process
 
 
 # (fuzzy-)match string local auth names to gov.uk register codes

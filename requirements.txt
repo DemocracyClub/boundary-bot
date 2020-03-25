@@ -1,6 +1,6 @@
 commitment>=2,<3
 cssselect==0.9.1
-fuzzywuzzy==0.17.0
+rapidfuzz==0.2.2
 lxml>=4.2,<5
 requests>=2.20.0,<3
 scraperwiki==0.5.1
