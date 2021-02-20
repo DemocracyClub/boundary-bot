@@ -21,7 +21,7 @@ class CodeMatcher:
 
     def get_data(self):
         r = requests.get(
-            'https://www.registers.service.gov.uk/registers/local-authority-eng/download-csv'
+            'https://raw.githubusercontent.com/DemocracyClub/GDSRegisters/master/registers/local-authority-eng/local-authority-eng.csv'
         )
 
         csv_reader = csv.DictReader(r.text.splitlines())
