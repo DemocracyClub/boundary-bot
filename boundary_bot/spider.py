@@ -28,6 +28,12 @@ class LgbceSpider(scrapy.Spider):
             # if we found exactly one link to a zipfile,
             # assume that's what we're looking for
             return zipfiles[0]
+
+        # Try being more specific
+        zipfiles = response.xpath("/html/body//a[contains(.,'Mapping')]/@href").extract()
+        if len(zipfiles) == 1:
+            return zipfiles[0]
+
         return None
 
     def get_legislation(self, response):
