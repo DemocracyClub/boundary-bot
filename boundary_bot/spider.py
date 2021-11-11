@@ -30,7 +30,8 @@ class LgbceSpider(scrapy.Spider):
             return zipfiles[0]
 
         # Try being more specific
-        zipfiles = response.xpath("/html/body//a[contains(.,'Mapping')]/@href").extract()
+        zipfiles = response.xpath("//a[contains(.,'Mapping')][contains(@href,'inal')]/@href").extract()
+
         if len(zipfiles) == 1:
             return zipfiles[0]
 
