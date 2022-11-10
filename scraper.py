@@ -9,9 +9,9 @@ If we are starting with an empty database we want to
 - disable some consistency checks
 """
 BOOTSTRAP_MODE = False
-SEND_NOTIFICATIONS = not(BOOTSTRAP_MODE)
+SEND_NOTIFICATIONS = not (BOOTSTRAP_MODE)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     scraper = LgbceScraper(BOOTSTRAP_MODE, SEND_NOTIFICATIONS)
     scraper.scrape()
