@@ -6,16 +6,15 @@ from data_provider import base_data
 
 @mock.patch("boundary_bot.code_matcher.CodeMatcher.get_data", lambda x: [])
 class ValidationTests(TestCase):
-
     def setUp(self):
         scraperwiki.sqlite.execute("DROP TABLE IF EXISTS lgbce_reviews;")
 
     def test_valid(self):
         scraper = LgbceScraper(False, False)
         scraper.data = {
-            'babergh': base_data['babergh'].copy(),
+            "babergh": base_data["babergh"].copy(),
         }
-        scraper.data['babergh']['latest_event'] = 'foo'
+        scraper.data["babergh"]["latest_event"] = "foo"
         scraper.BOOTSTRAP_MODE = False
         self.assertTrue(scraper.validate())
 
@@ -23,11 +22,11 @@ class ValidationTests(TestCase):
         # latest_event = None and we already have a non-empty latest_event in the DB
         scraper = LgbceScraper(False, False)
         scraper.data = {
-            'babergh': base_data['babergh'].copy(),
+            "babergh": base_data["babergh"].copy(),
         }
-        scraper.data['babergh']['latest_event'] = 'foo'
+        scraper.data["babergh"]["latest_event"] = "foo"
         scraper.save()
-        scraper.data['babergh']['latest_event'] = None
+        scraper.data["babergh"]["latest_event"] = None
 
         scraper.BOOTSTRAP_MODE = False
         with self.assertRaises(ScraperException) as e:
@@ -38,10 +37,12 @@ class ValidationTests(TestCase):
         # status = 'Recent Reviews' and record not in DB
         scraper = LgbceScraper(False, False)
         scraper.data = {
-            'allerdale': base_data['allerdale'].copy(),
+            "allerdale": base_data["allerdale"].copy(),
         }
-        scraper.data['allerdale']['latest_event'] = 'The Allerdale Electoral Change order'
-        scraper.data['allerdale']['eco_made'] = 1
+        scraper.data["allerdale"][
+            "latest_event"
+        ] = "The Allerdale Electoral Change order"
+        scraper.data["allerdale"]["eco_made"] = 1
 
         scraper.BOOTSTRAP_MODE = False
         with self.assertRaises(ScraperException) as e:
@@ -56,17 +57,22 @@ class ValidationTests(TestCase):
         # old status is 'Recent Reviews', new status is 'Current Reviews'
         scraper = LgbceScraper(False, False)
         scraper.data = {
-            'allerdale': base_data['allerdale'].copy(),
+            "allerdale": base_data["allerdale"].copy(),
         }
-        scraper.data['allerdale']['latest_event'] = 'The Allerdale Electoral Change order'
-        scraper.data['allerdale']['eco_made'] = 1
+        scraper.data["allerdale"][
+            "latest_event"
+        ] = "The Allerdale Electoral Change order"
+        scraper.data["allerdale"]["eco_made"] = 1
         scraper.save()
-        scraper.data['allerdale']['status'] = scraper.CURRENT_LABEL
+        scraper.data["allerdale"]["status"] = scraper.CURRENT_LABEL
 
         scraper.BOOTSTRAP_MODE = False
         with self.assertRaises(ScraperException) as e:
             scraper.validate()
-        assert "Record status has changed from 'Recent Reviews' to 'Current Reviews'" in str(e.exception)
+        assert (
+            "Record status has changed from 'Recent Reviews' to 'Current Reviews'"
+            in str(e.exception)
+        )
 
         # this check should be skipped in bootstrap mode
         scraper.BOOTSTRAP_MODE = True
@@ -76,13 +82,15 @@ class ValidationTests(TestCase):
         # old eco_made value is 1, new value is 0
         scraper = LgbceScraper(False, False)
         scraper.data = {
-            'allerdale': base_data['allerdale'].copy(),
+            "allerdale": base_data["allerdale"].copy(),
         }
-        scraper.data['allerdale']['latest_event'] = 'The Allerdale Electoral Change order'
-        scraper.data['allerdale']['eco_made'] = 1
-        scraper.data['allerdale']['status'] = scraper.CURRENT_LABEL
+        scraper.data["allerdale"][
+            "latest_event"
+        ] = "The Allerdale Electoral Change order"
+        scraper.data["allerdale"]["eco_made"] = 1
+        scraper.data["allerdale"]["status"] = scraper.CURRENT_LABEL
         scraper.save()
-        scraper.data['allerdale']['eco_made'] = 0
+        scraper.data["allerdale"]["eco_made"] = 0
 
         scraper.BOOTSTRAP_MODE = False
         with self.assertRaises(ScraperException) as e:

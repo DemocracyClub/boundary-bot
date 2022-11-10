@@ -34,12 +34,13 @@ class LgbceScraper:
       based on events in the boundary review process
     """
 
-    CURRENT_LABEL = 'Current Reviews'
-    COMPLETED_LABEL = 'Recent Reviews'
-    TABLE_NAME = 'lgbce_reviews'
+    CURRENT_LABEL = "Current Reviews"
+    COMPLETED_LABEL = "Recent Reviews"
+    TABLE_NAME = "lgbce_reviews"
 
     def __init__(self, BOOTSTRAP_MODE, SEND_NOTIFICATIONS):
-        scraperwiki.sql.execute("""
+        scraperwiki.sql.execute(
+            """
             CREATE TABLE IF NOT EXISTS %s (
                 slug TEXT PRIMARY KEY,
                 name TEXT,
@@ -50,7 +51,9 @@ class LgbceScraper:
                 shapefiles TEXT,
                 eco TEXT,
                 eco_made INT DEFAULT 0
-            );""" % self.TABLE_NAME)
+            );"""
+            % self.TABLE_NAME
+        )
         self.data = {}
         self.code_matcher = CodeMatcher()
         self.slack_helper = SlackHelper()
@@ -67,56 +70,55 @@ class LgbceScraper:
         expected_headings = [self.CURRENT_LABEL, self.COMPLETED_LABEL]
         root = lxml.html.fromstring(html)
 
-        headings = root.cssselect('div.field--label')
+        headings = root.cssselect("div.field--label")
 
         found_headings = [heading.text for heading in headings]
         if expected_headings != found_headings:
             raise ScraperException(
-                "Unexpected headings: Found %s, expected %s" %\
-                (str(found_headings), str(expected_headings))
+                "Unexpected headings: Found %s, expected %s"
+                % (str(found_headings), str(expected_headings))
             )
 
         for heading in headings:
             text = str(heading.text)
-            ul = heading.getnext().find('.//ul')
+            ul = heading.getnext().find(".//ul")
             # iterate over boundary reviews:
             for li in ul:
-                link = li.find('.//a')
-                url = link.get('href')
-                if not url.startswith('http'):
+                link = li.find(".//a")
+                url = link.get("href")
+                if not url.startswith("http"):
                     url = BASE_URL + url
-                slug = url.split('/')[-1]
+                slug = url.split("/")[-1]
                 self.data[slug] = {
-                    'slug': slug,
-                    'name': link.text,
-                    'register_code': None,
-                    'url': url,
-                    'status': text,
-                    'latest_event': None,
-                    'shapefiles': None,
-                    'eco': None,
-                    'eco_made': 0,
+                    "slug": slug,
+                    "name": link.text.strip(),
+                    "register_code": None,
+                    "url": url,
+                    "status": text,
+                    "latest_event": None,
+                    "shapefiles": None,
+                    "eco": None,
+                    "eco_made": 0,
                 }
-
 
     def attach_spider_data(self):
         wrapper = SpiderWrapper(LgbceSpider)
         review_details = wrapper.run_spider()
         for area in review_details:
-            if area['slug'] not in self.data:
+            if area["slug"] not in self.data:
                 raise ScraperException(
-                    "Unexpected slug: Found '%s', expected %s" %\
-                    (area['slug'], str([rec for rec in self.data]))
+                    "Unexpected slug: Found '%s', expected %s"
+                    % (area["slug"], str([rec for rec in self.data]))
                 )
-            self.data[area['slug']]['latest_event'] = area['latest_event']
-            self.data[area['slug']]['shapefiles'] = area['shapefiles']
-            self.data[area['slug']]['eco'] = area['eco']
-            self.data[area['slug']]['eco_made'] = area['eco_made']
+            self.data[area["slug"]]["latest_event"] = area["latest_event"]
+            self.data[area["slug"]]["shapefiles"] = area["shapefiles"]
+            self.data[area["slug"]]["eco"] = area["eco"]
+            self.data[area["slug"]]["eco_made"] = area["eco_made"]
 
     def attach_register_codes(self):
         for key, record in self.data.items():
-            code, *_ = self.code_matcher.get_register_code(record['name'])
-            record['register_code'] = code
+            code, *_ = self.code_matcher.get_register_code(record["name"])
+            record["register_code"] = code
 
     def validate(self):
         # perform some consistency checks
@@ -128,29 +130,43 @@ class LgbceScraper:
                 return True
 
             result = scraperwiki.sql.select(
-                "* FROM %s WHERE slug=?" % (self.TABLE_NAME), record['slug'])
+                "* FROM %s WHERE slug=?" % (self.TABLE_NAME), record["slug"]
+            )
 
-            if len(result) == 0 and record['status'] == self.COMPLETED_LABEL:
+            if len(result) == 0 and record["status"] == self.COMPLETED_LABEL:
                 # we shouldn't have found a record for the first time when it is completed
                 # we should find it under review and then it should move to completed
                 raise ScraperException(
-                    "New record found but status is '%s':\n%s" %\
-                    (self.COMPLETED_LABEL, str(record))
+                    "New record found but status is '%s':\n%s"
+                    % (self.COMPLETED_LABEL, str(record))
                 )
 
-            if len(result) == 1 and record['latest_event'] is None and result[0]['latest_event'] != '':
+            if (
+                len(result) == 1
+                and record["latest_event"] is None
+                and result[0]["latest_event"] != ""
+            ):
                 # the review isn't brand new and we've failed to scrape the latest review event
                 raise ScraperException(
-                    "Failed to populate 'latest_event' field:\n%s" % (str(record)))
-
-            if len(result) == 1 and record['status'] == self.CURRENT_LABEL and result[0]['status'] == self.COMPLETED_LABEL:
-                # reviews shouldn't move backwards from completed to current
-                raise ScraperException(
-                    "Record status has changed from '%s' to '%s':\n%s" %\
-                    (self.COMPLETED_LABEL, self.CURRENT_LABEL, str(record))
+                    "Failed to populate 'latest_event' field:\n%s" % (str(record))
                 )
 
-            if len(result) == 1 and record['eco_made'] == 0 and result[0]['eco_made'] == 1:
+            if (
+                len(result) == 1
+                and record["status"] == self.CURRENT_LABEL
+                and result[0]["status"] == self.COMPLETED_LABEL
+            ):
+                # reviews shouldn't move backwards from completed to current
+                raise ScraperException(
+                    "Record status has changed from '%s' to '%s':\n%s"
+                    % (self.COMPLETED_LABEL, self.CURRENT_LABEL, str(record))
+                )
+
+            if (
+                len(result) == 1
+                and record["eco_made"] == 0
+                and result[0]["eco_made"] == 1
+            ):
                 # reviews shouldn't move backwards from made to not made
                 raise ScraperException(
                     "'eco_made' field has changed from 1 to 0:\n%s" % (str(record))
@@ -159,18 +175,20 @@ class LgbceScraper:
             if len(result) > 1:
                 # society has collapsed :(
                 raise ScraperException(
-                    'Human sacrifice, dogs and cats living together, mass hysteria!')
+                    "Human sacrifice, dogs and cats living together, mass hysteria!"
+                )
         return True
 
     def pre_process(self):
         for key, record in self.data.items():
-            if record['latest_event'] is None:
-                record['latest_event'] = ''
+            if record["latest_event"] is None:
+                record["latest_event"] = ""
 
     def make_notifications(self):
         for key, record in self.data.items():
             result = scraperwiki.sql.select(
-                "* FROM %s WHERE slug=?" % (self.TABLE_NAME), record['slug'])
+                "* FROM %s WHERE slug=?" % (self.TABLE_NAME), record["slug"]
+            )
 
             if len(result) == 0:
                 # we've not seen this boundary review before
@@ -178,28 +196,31 @@ class LgbceScraper:
 
             if len(result) == 1:
                 # we've already got our eye on this one
-                if record['status'] == self.COMPLETED_LABEL and\
-                        result[0]['status'] != self.COMPLETED_LABEL:
+                if (
+                    record["status"] == self.COMPLETED_LABEL
+                    and result[0]["status"] != self.COMPLETED_LABEL
+                ):
                     self.slack_helper.append_completed_review_message(record)
                     self.github_helper.append_completed_review_issue(record)
-                if result[0]['latest_event'] != record['latest_event']:
+                if result[0]["latest_event"] != record["latest_event"]:
                     self.slack_helper.append_event_message(record)
 
     def save(self):
         for key, record in self.data.items():
             scraperwiki.sqlite.save(
-                unique_keys=['slug'], data=record, table_name=self.TABLE_NAME)
+                unique_keys=["slug"], data=record, table_name=self.TABLE_NAME
+            )
 
     def send_notifications(self):
 
         # write the notifications we've generated to
         # send to the console as well for debug purposes
         pp = pprint.PrettyPrinter(indent=2)
-        print('Slack messages:')
-        print('----')
+        print("Slack messages:")
+        print("----")
         pp.pprint(self.slack_helper.messages)
-        print('Github issues:')
-        print('----')
+        print("Github issues:")
+        print("----")
         pp.pprint(self.github_helper.issues)
 
         if not self.SEND_NOTIFICATIONS:
@@ -214,24 +235,27 @@ class LgbceScraper:
         # remove any stale records from the DB
         if not self.data:
             return
-        placeholders = '(' + ', '.join(['?' for rec in self.data]) + ')'
+        placeholders = "(" + ", ".join(["?" for rec in self.data]) + ")"
         result = scraperwiki.sql.execute(
             ("DELETE FROM %s WHERE slug NOT IN " + placeholders) % (self.TABLE_NAME),
-            [slug for slug in self.data]
+            [slug for slug in self.data],
         )
 
     def dump_table_to_json(self):
         records = scraperwiki.sqlite.select(
-            " * FROM %s ORDER BY slug;" % (self.TABLE_NAME))
+            " * FROM %s ORDER BY slug;" % (self.TABLE_NAME)
+        )
         return json.dumps(
             [OrderedDict(sorted(rec.items())) for rec in records],
-            sort_keys=True, indent=4)
+            sort_keys=True,
+            indent=4,
+        )
 
     def sync_db_to_github(self):
         if GITHUB_API_KEY:
             content = self.dump_table_to_json()
             g = GitHubSyncHelper()
-            g.sync_file_to_github('lgbce.json', content)
+            g.sync_file_to_github("lgbce.json", content)
 
     def scrape(self):
         self.parse_index(self.scrape_index())
