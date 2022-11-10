@@ -7,34 +7,24 @@ from rapidfuzz import process
 class CodeMatcher:
     def __init__(self):
         councils = self.get_data()
-        councils = [c for c in councils if not c["end-date"]]
-
-        self.long_names = [c["official-name"] for c in councils]
-        self.short_names = [c["name"] for c in councils]
-        self.long_name_to_code = {
-            c["official-name"]: c["local-authority-eng"] for c in councils
-        }
-        self.short_name_to_code = {
-            c["name"]: c["local-authority-eng"] for c in councils
+        self.names = [c["la-name"] for c in councils]
+        self.councils_lookup = {
+            c["la-name"]: c["local-authority-code"] for c in councils
         }
 
     def get_data(self):
         r = requests.get(
-            "https://raw.githubusercontent.com/DemocracyClub/GDSRegisters/master/registers/local-authority-eng/local-authority-eng.csv"
+            "https://raw.githubusercontent.com/mysociety/uk_local_authority_names_and_codes/main/data/lookup_name_to_registry.csv"
         )
 
         csv_reader = csv.DictReader(r.text.splitlines())
         return list(csv_reader)
 
     def get_register_code(self, name):
-        if "council" in name.lower():
-            match, score = process.extractOne(name, self.long_names)
-            code = self.long_name_to_code[match]
-        else:
-            match, score = process.extractOne(name, self.short_names)
-            code = self.short_name_to_code[match]
+        match, score = process.extractOne(name, self.names)
+        code = self.councils_lookup[match]
 
-        if score > 95:
+        if score >= 95:
             # close enough
             return (code, match, score)
 
